@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+# This script is used to detect differences between static dumps
+#
+# $1 - old database
+# $2 - new database
+# $3 - (optional) mysql binary name
+#
+if [ $# -gt 2 ] ; then
+  MYSQL=$3
+else
+  MYSQL=/usr/bin/mysql
+fi
+# Substitute appropriate password in the next line
+MYSQLSEQ="${MYSQL} -h 127.0.0.1 -u root -ppassword"
+if [ -s "${TMPDIR}" ] ; then
+    TSTAREA=${TMPDIR}/dbcheck-$$
+else
+    TSTAREA=/tmp/dbcheck-$$
+fi
+mkdir ${TSTAREA}
+trap "rm -rf ${TSTAREA}" SIGINT SIGTERM EXIT
+
+# Step 1 - check table count and list for new tables
+echo "Step 1 - checking for new or missing tables"
+echo 'show tables;' | ${MYSQLSEQ} $1 | tail -n +2 | awk '{print $1; if (NF > 1) print $2;}' | sort -u > ${TSTAREA}/old_tables.txt
+echo 'show tables;' | ${MYSQLSEQ} $2 | tail -n +2 | awk '{print $1; if (NF > 1) print $2;}' | sort -u > ${TSTAREA}/new_tables.txt
+oldtablecount=$(wc -l ${TSTAREA}/old_tables.txt)
+newtablecount=$(wc -l ${TSTAREA}/new_tables.txt)
+diff --suppress-common-lines -y ${TSTAREA}/old_tables.txt ${TSTAREA}/new_tables.txt > ${TSTAREA}/table_diffs.txt
+cat ${TSTAREA}/table_diffs.txt | grep '|' | awk -F'|' '{print "Table " $1 " not present in new data"; print "Table " $2 " not present in old data"}'
+cat ${TSTAREA}/table_diffs.txt | grep '<' | awk -F'<' '{print "Table " $1 " not present in new data"}'
+cat ${TSTAREA}/table_diffs.txt | grep '>' | awk -F'>' '{print "Table " $2 " not present in old data"}'
+
+# Step 2 - check schemas of common tables for differences
+echo "Step 2 - checking for changed schemas in existing tables"
+for i in $(cat ${TSTAREA}/old_tables.txt) ; do
+    echo "show create table ${i};" | ${MYSQLSEQ} $1 | sed -e 's/\\n/\n/g' > ${TSTAREA}/old_${i}_schema.txt
+done
+for i in $(cat ${TSTAREA}/new_tables.txt) ; do
+    echo "show create table ${i};" | ${MYSQLSEQ} $2 | sed -e 's/\\n/\n/g' > ${TSTAREA}/new_${i}_schema.txt
+done
+for i in $(cat ${TSTAREA}/old_tables.txt) ; do
+    if [ -f ${TSTAREA}/new_${i}_schema.txt ] ; then
+	if ! diff -iw ${TSTAREA}/old_${i}_schema.txt ${TSTAREA}/new_${i}_schema.txt > ${TSTAREA}/diffs_${i}.txt ; then
+	    echo "Schema changed for table ${i}:"
+	    cat ${TSTAREA}/diffs_${i}.txt
+	fi
+    fi
+done
