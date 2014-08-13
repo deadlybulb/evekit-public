@@ -14,5 +14,5 @@ static-data
 Useful scripts:
 
 * check_new_db: compares two versions of the EVE static DB stored on the same MySQL server and reports:
-** new or missing tables
-** tables with schema changes
+  * new or missing tables
+  * tables with schema changes
