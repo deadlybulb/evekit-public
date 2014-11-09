@@ -61,7 +61,7 @@ Read the "Quickstart" for instructions on how to use this code for servlet based
   * In EVESSOCallbackHandler:
     * Change getVerifyURL() to return the appropriate URL for Tranquility or SISI
 
-That's it!  Successful authentication will always end in EVESSOCallbackHandler.goGet().  See the sample code there for examples of what you can do post authentication.
+That's it!  Successful authentication will always end in EVESSOCallbackHandler.doGet().  See the sample code there for examples of what you can do post authentication.
 
 # Notes
 
