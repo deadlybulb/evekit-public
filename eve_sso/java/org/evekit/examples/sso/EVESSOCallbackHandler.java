@@ -46,7 +46,7 @@ public class EVESSOCallbackHandler extends HttpServlet {
     Response response = request.send();
     if (!response.isSuccessful()) throw new IOException("credential request was not successful!");
 
-    // The server response is in JSON format as described here: https://developers.testeveonline.com/resource/single-sign-on
+    // The server response is in JSON format as described here: https://developers.eveonline.com/resource/single-sign-on
     // You'll want to use a proper JSON parser, but here's a quick hack to pull out character name:
     Pattern charNamePattern = Pattern.compile("\"CharacterName\":\\s*\"(\\S*?)\"");
     Matcher charNameMatcher = charNamePattern.matcher(response.getBody());

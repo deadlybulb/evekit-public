@@ -22,16 +22,16 @@ EVE Single Sign On with Scribe
 
 At EveKit we use the Scribe library to perform single sign on for various providers.
 We added modifications to Scribe to make this work with the new EVE SSO support.
-Read below for quick instructions to use this code for servlet based applications.
-There's more description after the quickstart describing the classes provided here.
+Read the "Quickstart" for instructions on how to use this code for servlet based applications.
 
 # Classes
 
 * [EVEApi](eve_sso/java/org/scribe/builder/api/EVEApi.java) Scribe API implementation for EVE SSO against Tranquility.
 * [EVETestApi](eve_sso/java/org/scribe/builder/api/EVETestApi.java) Scribe API implementation for EVE SSO against SISI.
-* [EVEOAuthServiceImpl](eve_sso/java/org/scribe/builder/api/EVETestApiEVEOAuthServiceImpl.java) Scribe OAuthService implementation which adapts Scribe to EVE SSO.
+* [EVEOAuthServiceImpl](eve_sso/java/org/scribe/builder/api/EVEOAuthServiceImpl.java) Scribe OAuthService implementation which adapts Scribe to EVE SSO.
 * [EVESSOAuthorizationHandler](eve_sso/java/org/evekit/examples/sso/EVESSOAuthorizationHandler.java) Example servlet for initiating EVE SSO authentication.
 * [EVESSOCallbackHandler](eve_sso/java/org/evekit/examples/sso/EVESSOCallbackHandler.java) Example servlet for handling EVE SSO authentication callback.
+* [web.xml](eve_sso/web.xml) Example servlet configuration.
 
 # QuickStart
 
@@ -48,18 +48,20 @@ There's more description after the quickstart describing the classes provided he
     2. Your EVE APP Secret Key
     3. The callback URL you specified when you created your application.
 
-3. Add the examples servlets to your application
+3. Add the example servlets to your application (example [here](eve_sso/web.xml))
   * org.evekit.examples.sso.EVESSOAuthorizationHandler is the front-end which initiates authentication with EVE.  Your "login" button should hit a URL served by this servlet.
   * org.evekit.examples.sso.EVESSOCallbackHandler handles the callback from EVE after authentication completes.  This servlet should handle the URL you specified as the callback URL for your app.
 
-4. Add your configuration information to EVESSOAuthorizationHandler
-  * Change getClientID() to return your EVE APP client ID
-  * Change getSecretKey() to return your EVE APP secret key
-  * Change getApiClass() to return an appropriate class based on whether you want to authenticate against SISI
-  * Set the appropriate callback URL in the body of doGet.  **THE URL YOU SPECIFY HERE MUST MATCH THE CALLBACK URL YOU REGISTERED ON THE DEV SITE!**  Otherwise, EVE will reject the authentication attempt.
-  * Change EVESSOCallbackHandler.getVerifyURL to return the appropriate URL for Tranquility or SISI
+4. Add your configuration information to EVESSOAuthorizationHandler and EVESSOCallbackHandler
+  * In EVESSOAuthorizationHandler:
+    * Change getClientID() to return your EVE APP client ID
+    * Change getSecretKey() to return your EVE APP secret key
+    * Change getApiClass() to return an appropriate class based on whether you want to authenticate against SISI
+    * Set the appropriate callback URL in the body of doGet.  **THE URL YOU SPECIFY HERE MUST MATCH THE CALLBACK URL YOU REGISTERED ON THE DEV SITE!**  Otherwise, EVE will reject the authentication attempt.
+  * In EVESSOCallbackHandler:
+    * Change getVerifyURL() to return the appropriate URL for Tranquility or SISI
 
-That's it!  Successful authentication will always end in EVESSOCallbackHandler.goGet.  See the sample code there for examples of what you can do post authentication.
+That's it!  Successful authentication will always end in EVESSOCallbackHandler.goGet().  See the sample code there for examples of what you can do post authentication.
 
 # Notes
 
