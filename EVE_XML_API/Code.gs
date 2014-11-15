@@ -271,7 +271,7 @@ function SimplePropertySetter_(root, obj, key, path, parser) {
  * @param {Object} obj target object on which a value will be set.
  * @param {string} key name of the parameter to set on the target object.
  * @param {string} path XML path to extract.
- * @param {stirng] attr the name of the attribute to extract.
+ * @param {string] attr the name of the attribute to extract.
  * @param {Object} parser (optional) parser to process value before we assign to the object.
  */
 function SimpleAttributeSetter_(root, obj, key, path, attr, parser) {
@@ -428,6 +428,33 @@ function GenericBuilder_(ctor) {
     ProcessChildren_(root, 'eveapi/result/rowset', processor);
     return vals;
   };
+}
+
+/**
+ * Build lists of objects by finding children at the given path.  Cols is an array containing
+ * elements of the form:
+ * {
+ *   name : value of the "name" attribute a an element must have in order for its children to be processed
+ *   ctor : the constructor to invoke for each child of the matching element
+ *   tgt : a reference to the array which show hold the constructed objects
+ * }
+ *
+ * @param {Object} root the root element under which to find matches
+ * @param {Array} cols see above
+ * @param {string} path the path of matching elements
+ */
+function GenericListBuilder_(root, cols, path) {
+  for (var i = 0; i < cols.length; i++) {
+    var els = FindElements_(root, path, function (ck) {
+      return ck.getAttribute('name').getValue() === cols[i].name;
+    });
+    for (var j = 0; j < els.length; j++) {
+      var rows = els[j].getChildren('row');
+      for (var k = 0; k < rows.length; k++) {
+        cols[i].tgt.push(new cols[i].ctor(rows[k]));
+      }
+    }
+  }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -631,6 +658,13 @@ CharacterAPI.prototype.walletTransaction = function(rowCount, fromID) {
 // CorporationAPI
 // ------------------------------------------------------------------------------------------
 
+/**
+ * Create an instance of the Corporation API.  Use this instance to retrieve corporation data.
+ *
+ * @param {number} keyid EVE API key ID
+ * @param {string} vcode EVE API vCode
+ * @constructor
+ */
 function CorporationAPI(keyid, vcode) {
   this.keyID = keyid;
   this.vCode = vcode;
@@ -734,47 +768,41 @@ CorporationAPI.prototype.memberSecurityLog = function() {
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_SECURITY_LOG, 2, this.auth, {}, GenericBuilder_(MemberSecurityLog));
 };
 
-//  TODO:
-//  public Collection<IMemberTracking> requestMemberTracking() throws IOException {
-//    return getAdapterFactory("CorporationMemberTrackingAdapterFactory", MemberTrackingAdapterFactory.class).handleAPIRequest(this, null);
-//  }
-//
-//  TODO:
-//  public Collection<IOutpost> requestOutpostList() throws IOException {
-//    return getAdapterFactory("CorporationOutpostListAdapterFactory", OutpostListAdapterFactory.class).handleAPIRequest(this, null);
-//  }
-//
-//  TODO:
-//  public Collection<IOutpostServiceDetail> requestOutpostServiceDetail(long itemID) throws IOException {
-//    return getAdapterFactory("CorporationOutpostServiceDetailAdapterFactory", OutpostServiceDetailAdapterFactory.class).handleAPIRequest(this, itemID);
-//  }
-//
-//  TODO:
-//  public Collection<IShareholder> requestShareholders() throws IOException {
-//    return getAdapterFactory("CorporationShareholdersAdapterFactory", ShareholdersAdapterFactory.class).handleAPIRequest(this, null);
-//  }
-//
+CorporationAPI.prototype.memberTracking = function(extended) {
+  var args = {};
+  if (extended) args['extended'] = 1;
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_TRACKING, 2, this.auth, args, GenericBuilder_(MemberTracking));
+};
 
+CorporationAPI.prototype.outpostList = function() {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.OUTPOST_LIST, 2, this.auth, {}, GenericBuilder_(Outpost));
+};
+
+CorporationAPI.prototype.outpostService = function(itemid) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.OUTPOST_SERVICEDETAIL, 2, this.auth, {itemID: itemid}, GenericBuilder_(OutpostService));
+};
+
+CorporationAPI.prototype.shareholderList = function(itemid) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.SHAREHOLDERS, 2, this.auth, {},
+      function(el) { return new ShareholderList(el); });
+};
 
 CorporationAPI.prototype.standings = function() {
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.STANDINGS, 2, this.auth, {}, StandingBuilder_(false));
 };
 
-//  TODO:
-//  public IStarbaseDetail requestStarbaseDetail(long pos) throws IOException {
-//    return getAdapterFactory("CorporationStarbaseDetailAdapterFactory", StarbaseDetailAdapterFactory.class).handleAPIRequest(this, pos);
-//  }
-//
-//  TODO:
-//  public Collection<IStarbase> requestStarbaseList() throws IOException {
-//    return getAdapterFactory("CorporationStarbaseListAdapterFactory", StarbaseListAdapterFactory.class).handleAPIRequest(this, null);
-//  }
-//
-//  TODO:
-//  public Collection<ITitle> requestTitles() throws IOException {
-//    return getAdapterFactory("CorporationTitlesAdapterFactory", TitlesAdapterFactory.class).handleAPIRequest(this, null);
-//  }
-//
+CorporationAPI.prototype.starbaseList = function() {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.STARBASE_LIST, 2, this.auth, {}, GenericBuilder_(Starbase));
+};
+
+CorporationAPI.prototype.starbaseDetail = function(itemid) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.STARBASE_DETAIL, 2, this.auth, {itemID: itemid},
+      function(el) { return new StarbaseDetail(el) });
+};
+
+CorporationAPI.prototype.titles = function() {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.TITLES, 2, this.auth, {}, GenericBuilder_(Title));
+};
 
 CorporationAPI.prototype.walletJournal = function(accountKey, rowCount, fromID) {
   var args = { accountKey: accountKey };
@@ -783,6 +811,14 @@ CorporationAPI.prototype.walletJournal = function(accountKey, rowCount, fromID) 
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.WALLET_JOURNAL, 2, this.auth, args, GenericBuilder_(WalletJournal));
 };
 
+/**
+ * Retrieve corporation wallet transactions
+ *
+ * @param {number} accountKey wallet account key
+ * @param {number} rowCount (optional) number of rows to return
+ * @param {number} fromID (optional) retrieve wallet transactions with a transaction ID less than this value
+ * @returns {Object} an array of WalletTransaction objects
+ */
 CorporationAPI.prototype.walletTransaction = function(accountKey, rowCount, fromID) {
   var args = { accountKey: accountKey };
   if (rowCount !== undefined) args['rowCount'] = rowCount;
@@ -1055,17 +1091,7 @@ function CharacterSheet(root) {
               { name: 'corporationRolesAtOther', ctor: CorporationRole, tgt: this.corporationRolesAtOther },
               { name: 'corporationTitles', ctor: CorporationTitle, tgt: this.corporationTitles }
               ];
-  for (var i = 0; i < cols.length; i++) {
-    var els = FindElements_(root, 'eveapi/result/rowset', function (ck) {
-      return ck.getAttribute('name').getValue() === cols[i].name;
-    });
-    for (var j = 0; j < els.length; j++) {
-      var rows = els[j].getChildren('row');
-      for (var k = 0; k < rows.length; k++) {
-        cols[i].tgt.push(new cols[i].ctor(rows[k]));
-      }
-    }
-  }
+  GenericListBuilder_(root, cols, 'eveapi/result/rowset');
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1095,17 +1121,7 @@ function ContactList(root) {
               { name: 'corporateContactList', ctor: Contact, tgt: this.corporateContactList },
               { name: 'allianceContactList', ctor: Contact, tgt: this.allianceContactList }
               ];
-  for (var i = 0; i < cols.length; i++) {
-    var els = FindElements_(root, 'eveapi/result/rowset', function (ck) {
-      return ck.getAttribute('name').getValue() === cols[i].name;
-    });
-    for (var j = 0; j < els.length; j++) {
-      var rows = els[j].getChildren('row');
-      for (var k = 0; k < rows.length; k++) {
-        cols[i].tgt.push(new cols[i].ctor(rows[k]));
-      }
-    }
-  }
+  GenericListBuilder_(root, cols, 'eveapi/result/rowset');
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1347,18 +1363,7 @@ function KillMail(root) {
               { name: 'attackers', ctor: KillAttacker, tgt: this.attackers },
               { name: 'items', ctor: KillItem, tgt: this.items }
               ];
-  for (var i = 0; i < cols.length; i++) {
-    var els = FindElements_(root, 'row/rowset', function (ck) {
-      return ck.getAttribute('name').getValue() === cols[i].name;
-    });
-    for (var j = 0; j < els.length; j++) {
-      var rows = els[j].getChildren('row');
-      for (var k = 0; k < rows.length; k++) {
-        cols[i].tgt.push(new cols[i].ctor(rows[k]));
-      }
-    }
-  }
-
+  GenericListBuilder_(root, cols, 'row/rowset');
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1491,17 +1496,7 @@ function MedalList(root) {
               { name: 'medals', ctor: Medal, tgt: this.medals },
               { name: 'issuedMedals', ctor: Medal, tgt: this.issuedMedals }
               ];
-  for (var i = 0; i < cols.length; i++) {
-    var els = FindElements_(root, 'eveapi/result/rowset', function (ck) {
-      return ck.getAttribute('name').getValue() === cols[i].name;
-    });
-    for (var j = 0; j < els.length; j++) {
-      var rows = els[j].getChildren('row');
-      for (var k = 0; k < rows.length; k++) {
-        cols[i].tgt.push(new cols[i].ctor(rows[k]));
-      }
-    }
-  }
+  GenericListBuilder_(root, cols, 'eveapi/result/rowset');
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1684,17 +1679,7 @@ function StandingList(path, root) {
               { name: 'NPCCorporations', ctor: Standing, tgt: this.NPCCorporations },
               { name: 'factions', ctor: Standing, tgt: this.factions}
               ];
-  for (var i = 0; i < cols.length; i++) {
-    var els = FindElements_(root, path, function (ck) {
-      return ck.getAttribute('name').getValue() === cols[i].name;
-    });
-    for (var j = 0; j < els.length; j++) {
-      var rows = els[j].getChildren('row');
-      for (var k = 0; k < rows.length; k++) {
-        cols[i].tgt.push(new cols[i].ctor(rows[k]));
-      }
-    }
-  }
+  GenericListBuilder_(root, cols, path);
 }
 
 function Standing(root) {
@@ -1875,17 +1860,7 @@ function CorporationSheet(root) {
               { name: 'divisions', ctor: Division, tgt: this.divisions },
               { name: 'walletDivisions', ctor: Division, tgt: this.walletDivisions }
               ];
-  for (var i = 0; i < cols.length; i++) {
-    var els = FindElements_(root, 'eveapi/result/rowset', function (ck) {
-      return ck.getAttribute('name').getValue() === cols[i].name;
-    });
-    for (var j = 0; j < els.length; j++) {
-      var rows = els[j].getChildren('row');
-      for (var k = 0; k < rows.length; k++) {
-        cols[i].tgt.push(new cols[i].ctor(rows[k]));
-      }
-    }
-  }
+  GenericListBuilder_(root, cols, 'eveapi/result/rowset');
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1925,17 +1900,7 @@ function MemberSecurity(root) {
               { name: 'grantableRolesAtOther', ctor: CorporationRole, tgt: this.grantableRolesAtOther },
               { name: 'titles', ctor: CorporationTitle, tgt: this.titles }
               ];
-  for (var i = 0; i < cols.length; i++) {
-    var els = FindElements_(root, 'row/rowset', function (ck) {
-      return ck.getAttribute('name').getValue() === cols[i].name;
-    });
-    for (var j = 0; j < els.length; j++) {
-      var rows = els[j].getChildren('row');
-      for (var k = 0; k < rows.length; k++) {
-        cols[i].tgt.push(new cols[i].ctor(rows[k]));
-      }
-    }
-  }
+  GenericListBuilder_(root, cols, 'row/rowset');
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1988,15 +1953,232 @@ function MemberSecurityLog(root) {
               { name: 'oldRoles', ctor: ChangedRole, tgt: this.oldRoles },
               { name: 'newRoles', ctor: ChangedRole, tgt: this.newRoles }
               ];
-  for (var i = 0; i < cols.length; i++) {
-    var els = FindElements_(root, 'row/rowset', function (ck) {
-      return ck.getAttribute('name').getValue() === cols[i].name;
-    });
-    for (var j = 0; j < els.length; j++) {
-      var rows = els[j].getChildren('row');
-      for (var k = 0; k < rows.length; k++) {
-        cols[i].tgt.push(new cols[i].ctor(rows[k]));
-      }
-    }
-  }
+  GenericListBuilder_(root, cols, 'row/rowset');
+}
+
+// ------------------------------------------------------------------------------------------
+// MemberTracking
+// ------------------------------------------------------------------------------------------
+function MemberTracking(root) {
+  // long characterID
+  // string name
+  // Date startDateTime
+  // long baseID
+  // string base
+  // string title
+  // Date logonDateTime
+  // Date logoffDateTime
+  // long locationID
+  // string location
+  // int shipTypeID
+  // string shipType
+  // long roles
+  // long grantableRoles
+  AllAttributeSetter_(root, this, 'row');
+  if (this.characterID !== undefined) this.characterID = parseInt(this.characterID);
+  if (this.startDateTime !== undefined) this.startDateTime = EveDateParser_(this.startDateTime);
+  if (this.baseID !== undefined) this.baseID = parseInt(this.baseID);
+  if (this.logonDateTime !== undefined) this.logonDateTime = EveDateParser_(this.logonDateTime);
+  if (this.logoffDateTime !== undefined) this.logoffDateTime = EveDateParser_(this.logoffDateTime);
+  if (this.locationID !== undefined) this.locationID = parseInt(this.locationID);
+  if (this.shipTypeID !== undefined) this.shipTypeID = parseInt(this.shipTypeID);
+  if (this.roles !== undefined) this.roles = parseInt(this.roles);
+  if (this.grantableRoles !== undefined) this.grantableRoles = parseInt(this.grantableRoles);
+}
+
+// ------------------------------------------------------------------------------------------
+// Outpost
+// ------------------------------------------------------------------------------------------
+function Outpost(root) {
+  // long stationID
+  // long ownerID
+  // string stationName
+  // long solarSystemID
+  // double dockingCostPerShipVolume
+  // double officeRentalCost
+  // int stationTypeID
+  // double reprocessingEfficiency
+  // double reprocessingStationTake
+  // long standingOwnerID
+  AllAttributeSetter_(root, this, 'row', parseInt);
+  // Fix non-int attributes
+  SimpleAttributeSetter_(root, this, 'stationName', 'row', 'stationName');
+  SimpleAttributeSetter_(root, this, 'dockingCostPerShipVolume', 'row', 'dockingCostPerShipVolume', parseFloat);
+  SimpleAttributeSetter_(root, this, 'officeRentalCost', 'row', 'officeRentalCost', parseFloat);
+  SimpleAttributeSetter_(root, this, 'reprocessingEfficiency', 'row', 'reprocessingEfficiency', parseFloat);
+  SimpleAttributeSetter_(root, this, 'reprocessingStationTake', 'row', 'reprocessingStationTake', parseFloat);
+}
+
+// ------------------------------------------------------------------------------------------
+// OutpostService
+// ------------------------------------------------------------------------------------------
+function OutpostService(root) {
+  // long stationID
+  // long ownerID
+  // string serviceName
+  // double minStanding
+  // double surchargePerBadStanding
+  // double discountPerGoodStanding
+  AllAttributeSetter_(root, this, 'row', parseInt);
+  // Fix non-int attributes
+  SimpleAttributeSetter_(root, this, 'serviceName', 'row', 'serviceName');
+  SimpleAttributeSetter_(root, this, 'minStanding', 'row', 'minStanding', parseFloat);
+  SimpleAttributeSetter_(root, this, 'surchargePerBadStanding', 'row', 'surchargePerBadStanding', parseFloat);
+  SimpleAttributeSetter_(root, this, 'discountPerGoodStanding', 'row', 'discountPerGoodStanding', parseFloat);
+}
+
+// ------------------------------------------------------------------------------------------
+// Shareholders
+// ------------------------------------------------------------------------------------------
+function Shareholder(root) {
+  // long shareholderID
+  // string shareholderName
+  // long shareholderCorporationID (char only)
+  // string shareholderCorporationName (char only)
+  // int shares
+  AllAttributeSetter_(root, this, 'row');
+  if (this.shareholderID !== undefined) this.shareholderID = parseInt(this.shareholderID);
+  if (this.shareholderCorporationID !== undefined) this.shareholderCorporationID = parseInt(this.shareholderCorporationID);
+  if (this.shares !== undefined) this.shares = parseInt(this.shares);
+}
+
+function ShareholderList(root) {
+  // characters = [] <- Shareholder
+  // corporations = [] <- Shareholder
+  this.characters = [];
+  this.corporations = [];
+  var cols = [
+              { name: 'characters', ctor: Shareholder, tgt: this.characters },
+              { name: 'corporations', ctor: Shareholder, tgt: this.corporations}
+              ];
+  GenericListBuilder_(root, cols, 'eveapi/result/rowset');
+}
+
+// ------------------------------------------------------------------------------------------
+// Starbase
+// ------------------------------------------------------------------------------------------
+function Starbase(root) {
+  // long itemID
+  // int typeID
+  // long locationID
+  // long moonID
+  // int state
+  // Date stateTimestamp
+  // Date onlineTimestamp
+  // long standingOwnerID
+  AllAttributeSetter_(root, this, 'row', parseInt);
+  // Fix non-int attributes
+  SimpleAttributeSetter_(root, this, 'stateTimestamp', 'row', 'stateTimestamp', EveDateParser_);
+  SimpleAttributeSetter_(root, this, 'onlineTimestamp', 'row', 'onlineTimestamp', EveDateParser_);
+}
+
+// ------------------------------------------------------------------------------------------
+// StarbaseDetail
+// ------------------------------------------------------------------------------------------
+function GeneralSettings(root) {
+  // int usageFlags
+  // int deployFlags
+  // boolean allowCorporationMembers
+  // boolean allowAllianceMembers
+  SimplePropertySetter_(root, this, 'usageFlags', 'generalSettings/usageFlags', parseInt);
+  SimplePropertySetter_(root, this, 'deployFlags', 'generalSettings/deployFlags', parseInt);
+  SimplePropertySetter_(root, this, 'allowCorporationMembers', 'generalSettings/allowCorporationMembers', parseInt);
+  SimplePropertySetter_(root, this, 'allowAllianceMembers', 'generalSettings/allowAllianceMembers', parseInt);
+  if (this.allowCorporationMembers !== undefined) this.allowCorporationMembers = this.allowCorporationMembers === 1;
+  if (this.allowAllianceMembers !== undefined) this.allowAllianceMembers = this.allowAllianceMembers === 1;
+}
+
+function CombatSettings(root) {
+  // long useStandingsFrom
+  // double onStandingDropStanding
+  // boolean onStandingDropEnabled
+  // double onStatusDropStanding
+  // boolean onStatusDropEnabled
+  // double onAggressionStanding
+  // boolean onAggressionEnabled
+  // double onCorporationWarStanding
+  // boolean onCorporationWarEnabled
+  SimpleAttributeSetter_(root, this, 'useStandingsFrom', 'combatSettings/useStandingsFrom', 'ownerID', parseInt);
+  SimpleAttributeSetter_(root, this, 'onStandingDropStanding', 'combatSettings/onStandingDrop', 'standing', parseFloat);
+  SimpleAttributeSetter_(root, this, 'onStandingDropEnabled', 'combatSettings/onStandingDrop', 'enabled', parseInt);
+  SimpleAttributeSetter_(root, this, 'onStatusDropStanding', 'combatSettings/onStatusDrop', 'standing', parseFloat);
+  SimpleAttributeSetter_(root, this, 'onStatusDropEnabled', 'combatSettings/onStatusDrop', 'enabled', parseInt);
+  SimpleAttributeSetter_(root, this, 'onAggressionStanding', 'combatSettings/onAggression', 'standing', parseFloat);
+  SimpleAttributeSetter_(root, this, 'onAggressionEnabled', 'combatSettings/onAggression', 'enabled', parseInt);
+  SimpleAttributeSetter_(root, this, 'onCorporationWarStanding', 'combatSettings/onCorporationWar', 'standing', parseFloat);
+  SimpleAttributeSetter_(root, this, 'onCorporationWarEnabled', 'combatSettings/onCorporationWar', 'enabled', parseInt);
+  if (this.onStandingDropEnabled !== undefined) this.onStandingDropEnabled = this.onStandingDropEnabled === 1;
+  if (this.onStatusDropEnabled !== undefined) this.onStatusDropEnabled = this.onStatusDropEnabled === 1;
+  if (this.onAggressionEnabled !== undefined) this.onAggressionEnabled = this.onAggressionEnabled === 1;
+  if (this.onCorporationWarEnabled !== undefined) this.onCorporationWarEnabled = this.onCorporationWarEnabled === 1;
+}
+
+function Fuel(root) {
+  // int typeID
+  // int quantity
+  AllAttributeSetter_(root, this, 'row', parseInt);
+}
+
+function StarbaseDetail(root) {
+  // int state
+  // Date stateTimestamp
+  // Date onlineTimestamp
+  // GeneralSettings generalSettings
+  // CombatSettings combatSettings
+  // fuel = [] <- Fuel
+  SimplePropertySetter_(root, this, 'state', 'eveapi/result/state', parseInt);
+  SimplePropertySetter_(root, this, 'stateTimestamp', 'eveapi/result/stateTimestamp', EveDateParser_);
+  SimplePropertySetter_(root, this, 'onlineTimestamp', 'eveapi/result/onlineTimestamp', EveDateParser_);
+  this.generalSettings = new GeneralSettings(root.getChild('result').getChild('generalSettings'));
+  this.combatSettings = new CombatSettings(root.getChild('result').getChild('combatSettings'));
+  this.fuel = [];
+  var cols = [
+              { name: 'fuel', ctor: Fuel, tgt: this.fuel}
+              ];
+  GenericListBuilder_(root, cols, 'eveapi/result/rowset');
+}
+
+// ------------------------------------------------------------------------------------------
+// Title
+// ------------------------------------------------------------------------------------------
+function Role(root) {
+  // int roleID
+  // string roleName
+  // string roleDescription
+  AllAttributeSetter_(root, this, 'row');
+  if (this.roleID !== undefined) this.roleID = parseInt(this.roleID);
+}
+
+function Title(root) {
+  // int titleID
+  // string titleName
+  // roles = [] <- Role
+  // grantableRoles = [] <- Role
+  // rolesAtHQ = [] <- Role
+  // grantableRolesAtHQ = [] <- Role
+  // rolesAtBase = [] <- Role
+  // grantableRolesAtBase = [] <- Role
+  // rolesAtOther = [] <- Role
+  // grantableRolesAtOther = [] <- Role
+  AllAttributeSetter_(root, this, 'row');
+  if (this.titleID !== undefined) this.titleID = parseInt(this.titleID);
+  this.roles = [];
+  this.grantableRoles = [];
+  this.rolesAtHQ = [];
+  this.grantableRolesAtHQ = [];
+  this.rolesAtBase = [];
+  this.grantableRolesAtBase = [];
+  this.rolesAtOther = [];
+  this.grantableRolesAtOther = [];
+  var cols = [
+              { name: 'roles', ctor: Role, tgt: this.roles },
+              { name: 'grantableRoles', ctor: Role, tgt: this.grantableRoles },
+              { name: 'rolesAtHQ', ctor: Role, tgt: this.rolesAtHQ },
+              { name: 'grantableRolesAtHQ', ctor: Role, tgt: this.grantableRolesAtHQ },
+              { name: 'rolesAtBase', ctor: Role, tgt: this.rolesAtBase },
+              { name: 'grantableRolesAtBase', ctor: Role, tgt: this.grantableRolesAtBase },
+              { name: 'rolesAtOther', ctor: Role, tgt: this.rolesAtOther },
+              { name: 'grantableRolesAtOther', ctor: Role, tgt: this.grantableRolesAtOther }
+              ];
+  GenericListBuilder_(root, cols, 'row/rowset');
 }
