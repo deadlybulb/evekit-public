@@ -461,197 +461,433 @@ function GenericListBuilder_(root, cols, path) {
 // AccountAPI
 // ------------------------------------------------------------------------------------------
 
-function AccountAPI(keyid, vcode) {
-  this.keyID = keyid;
-  this.vCode = vcode;
-  this.auth = new ApiAuth(keyid, vcode);
+/**
+ * Retrieve account status.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {AccountStatus} current account status
+ */
+function accountStatus(auth) {
+  return retrieveXML_(ApiPath.ACCOUNT, ApiPage.ACCOUNT_STATUS, 2, auth, {},
+      function(el) { return new AccountStatus(el) });
 }
 
-AccountAPI.prototype.accountStatus = function() {
-  return retrieveXML_(ApiPath.ACCOUNT, ApiPage.ACCOUNT_STATUS, 2, this.auth, {},
-      function(el) { return new AccountStatus(el) });
-};
-
-AccountAPI.prototype.characters = function() {
-  return retrieveXML_(ApiPath.ACCOUNT, ApiPage.CHARACTERS, 1, this.auth, {}, GenericBuilder_(Character));
+/**
+ * Retrieve account characters.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Character>} array of characters associated with this account
+ */
+function accountCharacters(auth){
+  return retrieveXML_(ApiPath.ACCOUNT, ApiPage.CHARACTERS, 1, auth, {}, GenericBuilder_(Character));
 };
 
 // ------------------------------------------------------------------------------------------
 // CharacterAPI
 // ------------------------------------------------------------------------------------------
 
-function CharacterAPI(keyid, vcode, charid) {
-  this.keyID = keyid;
-  this.vCode = vcode;
-  this.charID = charid;
-  this.auth = new ApiAuth(keyid, vcode, charid);
-}
-
-CharacterAPI.prototype.accountBalances = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.ACCOUNT_BALANCE, 2, this.auth, {}, GenericBuilder_(AccountBalance));
+/**
+ * Retrieve character account balances.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<AccountBalance>} array of character account balances
+ */
+function charAccountBalances(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.ACCOUNT_BALANCE, 2, auth, {}, GenericBuilder_(AccountBalance));
 };
 
-CharacterAPI.prototype.assetList = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.ASSET_LIST, 2, this.auth, {}, GenericBuilder_(Asset));
+/**
+ * Retrieve character assets.  Contained assets are stored in the "assets" array of the container.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Asset>} array of character assets
+ */
+function charAssetList(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.ASSET_LIST, 2, auth, {}, GenericBuilder_(Asset));
 };
 
-CharacterAPI.prototype.blueprints = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.BLUEPRINTS, 2, this.auth, {}, GenericBuilder_(Blueprint));
+/**
+ * Retrieve character blueprints.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Blueprint>} array of character blueprints
+ */
+function charBlueprints(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.BLUEPRINTS, 2, auth, {}, GenericBuilder_(Blueprint));
 };
 
-CharacterAPI.prototype.calendarEventAttendees = function() {
+/**
+ * Retrieve calendar event attendees for upcoming calendar events as specified by one or
+ * more event IDs.  Event IDs should be specified after the "auth" argument.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<CalendarEventAttendee>} array of calendar event attendees for the specified events.
+ */
+function charCalendarEventAttendees(auth) {
   var args = [];
-  for (var i = 0; i < arguments.length; i++) {
+  for (var i = 1; i < arguments.length; i++) {
     args.push(arguments[i]);
   }
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CALENDAR_EVENT_ATTENDEES, 2, this.auth,
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CALENDAR_EVENT_ATTENDEES, 2, auth,
       { eventIDs: args.join(',')}, GenericBuilder_(CalendarEventAttendee));
 };
 
-CharacterAPI.prototype.sheet = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CHARACTER_SHEET, 1, this.auth, {},
+/**
+ * Retrieve character sheet.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {CharacterSheet} character's sheet
+ */
+function charSheet(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CHARACTER_SHEET, 1, auth, {},
       function(el) { return new CharacterSheet(el) });
 };
 
-CharacterAPI.prototype.contactList = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CONTACT_LIST, 2, this.auth, {},
+/**
+ * Retrieve character contact list.  Contacts are stored in one of three arrays
+ * in the returned object:
+ *
+ * <ol>
+ * <li> contactList - regular contacts.
+ * <li> corporateContactList - corporate contacts.
+ * <li> allianceContactList - alliance contacts.
+ * </ol>
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {ContactList} character contact list
+ */
+function charContactList(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CONTACT_LIST, 2, auth, {},
       function(el) { return new ContactList(el) });
 };
 
-CharacterAPI.prototype.contactNotifications = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CONTACT_NOTIFICATIONS, 2, this.auth, {}, GenericBuilder_(ContactNotification));
+/**
+ * Retrieve character contact notifications.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<ContactNotification>} array of character contact notifications
+ */
+function charContactNotifications(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CONTACT_NOTIFICATIONS, 2, auth, {}, GenericBuilder_(ContactNotification));
 };
 
-CharacterAPI.prototype.contracts = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CONTRACTS, 1, this.auth, {}, GenericBuilder_(Contract));
+/**
+ * Retrieve character contracts.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Contract>} array of character contracts
+ */
+function charContracts(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CONTRACTS, 1, auth, {}, GenericBuilder_(Contract));
 };
 
-CharacterAPI.prototype.contractBids = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CONTRACT_BIDS, 1, this.auth, {}, GenericBuilder_(ContractBid));
+/**
+ * Retrieve contract bids for character contracts.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<ContractBid>} array of contract bids
+ */
+function charContractBids(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CONTRACT_BIDS, 1, auth, {}, GenericBuilder_(ContractBid));
 };
 
-CharacterAPI.prototype.contractItems = function(contractID) {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CONTRACT_ITEMS, 1, this.auth,
+/**
+ * Retrieve contract items for the specified character contract.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} contractID ID of contract for which items will be retrieved
+ * @returns {Array<ContractItem>} array of contract items
+ */
+function charContractItems(auth, contractID) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.CONTRACT_ITEMS, 1, auth,
       { contractID: contractID }, GenericBuilder_(ContractItem));
 };
 
-CharacterAPI.prototype.facWarStats = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.FACT_WAR_STATS, 2, this.auth, {},
+/**
+ * Retrieve character faction war stats.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {FacWarStats} faction war stats for this character
+ */
+function charFacWarStats(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.FACT_WAR_STATS, 2, auth, {},
       function(el) { return new FacWarStats(el) });
 };
 
-CharacterAPI.prototype.industryJobs = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.INDUSTRY_JOBS, 2, this.auth, {}, GenericBuilder_(IndustryJob));
+/**
+ * Retrieve character industry jobs.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<IndustryJob>} array of character industry jobs
+ */
+function charIndustryJobs(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.INDUSTRY_JOBS, 2, auth, {}, GenericBuilder_(IndustryJob));
 };
 
-CharacterAPI.prototype.industryJobsHistory = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.INDUSTRY_JOBS_HISTORY, 2, this.auth, {}, GenericBuilder_(IndustryJob));
+/**
+ * Retrieve historic character industry jobs.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<IndustryJob>} array of historic character industry jobs
+ */
+function charIndustryJobsHistory(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.INDUSTRY_JOBS_HISTORY, 2, auth, {}, GenericBuilder_(IndustryJob));
 };
 
-CharacterAPI.prototype.killMails = function(fromID, rowCount) {
+/**
+ * Retrieve a selection of character kill mails.  If "fromID" is defined, then only kill mails with a kill ID
+ * before "fromID" will be retrieved (used for walking backwards).  If "rowCount" is specified,
+ * then at most "rowCount" rows will be returned.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} fromID max kill ID to return for this call
+ * @param {number} rowCount limit on number of records returned
+ * @returns {Array<KillMail>} array of character kill mails
+ */
+function charKillMails(auth, fromID, rowCount) {
   var args = {};
   if (fromID !== undefined) args['fromID'] = fromID;
   if (rowCount !== undefined) args['rowCount'] = rowCount;
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.KILL_LOG, 2, this.auth, args, GenericBuilder_(KillMail));
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.KILL_LOG, 2, auth, args, GenericBuilder_(KillMail));
 };
 
-CharacterAPI.prototype.locations = function() {
+/**
+ * Retrieve locations for a set of item IDs owned by this character.  Item IDs should be
+ * specified after the "auth" argument.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Location>} array of item locations
+ */
+function charLocations(auth) {
   var args = [];
-  for (var i = 0; i < arguments.length; i++) {
+  for (var i = 1; i < arguments.length; i++) {
     args.push(arguments[i]);
   }
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.LOCATIONS, 2, this.auth,
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.LOCATIONS, 2, auth,
       { IDs: args.join(',')}, GenericBuilder_(Location));
 };
 
-CharacterAPI.prototype.mailMessages = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.MAIL_MESSAGES, 2, this.auth, {}, GenericBuilder_(MailMessage));
+/**
+ * Retrieve character mail message headers.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<MailMessage>} array of mail message headers
+ */
+function charMailMessages(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.MAIL_MESSAGES, 2, auth, {}, GenericBuilder_(MailMessage));
 };
 
-CharacterAPI.prototype.mailBodies = function() {
+/**
+ * Retrieve mail message bodies for the specified message IDs.
+ * Message IDs should be specified after the "auth" argument.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<MailBody>} array of mail bodies for the specified message IDs
+ */
+function charMailBodies(auth) {
   var args = [];
-  for (var i = 0; i < arguments.length; i++) {
+  for (var i = 1; i < arguments.length; i++) {
     args.push(arguments[i]);
   }
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.MAIL_BODIES, 2, this.auth,
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.MAIL_BODIES, 2, auth,
       { ids: args.join(',')}, GenericBuilder_(MailBody));
 };
 
-CharacterAPI.prototype.mailingLists = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.MAILING_LISTS, 2, this.auth, {}, GenericBuilder_(MailingList));
+/**
+ * Retrieve character mailing lists.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<MailingList>} array of character mailing lists
+ */
+function charMailingLists(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.MAILING_LISTS, 2, auth, {}, GenericBuilder_(MailingList));
 };
 
-CharacterAPI.prototype.marketOrders = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.MARKET_ORDERS, 2, this.auth, {}, GenericBuilder_(MarketOrder));
+/**
+ * Retrieve character market orders.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<MarketOrder>} array of character market orders
+ */
+function charMarketOrders(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.MARKET_ORDERS, 2, auth, {}, GenericBuilder_(MarketOrder));
 };
 
-CharacterAPI.prototype.medalList = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.MEDALS, 2, this.auth, {},
+/**
+ * Retrieve list of character medals.  Medals are stored in one of two
+ * arrays in the returned object:
+ *
+ * <ol>
+ * <li> currentCorporation - medals awarded from the character's current corporation
+ * <li> otherCorporations - medals awarded to the character by other corporations
+ * </ol>
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {MedalList} character medal list
+ */
+function charMedalList(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.MEDALS, 2, auth, {},
       function(el) { return new MedalList(el) });
 };
 
-CharacterAPI.prototype.notifications = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.NOTIFICATIONS, 2, this.auth, {}, GenericBuilder_(Notification));
+/**
+ * Retrieve character notifications headers.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Notification>} array of character notification headers
+ */
+function charNotifications(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.NOTIFICATIONS, 2, auth, {}, GenericBuilder_(Notification));
 };
 
-CharacterAPI.prototype.notificationTexts = function() {
+/**
+ * Retrieve character notification bodies.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<NotificationText>} array of character notification bodies
+ */
+function charNotificationTexts(auth) {
   var args = [];
-  for (var i = 0; i < arguments.length; i++) {
+  for (var i = 1; i < arguments.length; i++) {
     args.push(arguments[i]);
   }
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.NOTIFICATION_TEXTS, 2, this.auth,
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.NOTIFICATION_TEXTS, 2, auth,
       { IDs: args.join(',')}, GenericBuilder_(NotificationText));
 };
 
-CharacterAPI.prototype.planetaryColonies = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.PLANETARY_COLONIES, 2, this.auth, {}, GenericBuilder_(PlanetaryColony));
+/**
+ * Retrieve character planetary colonies.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<PlanetaryColony>} array of character planetary colonies
+ */
+function charPlanetaryColonies(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.PLANETARY_COLONIES, 2, auth, {}, GenericBuilder_(PlanetaryColony));
 };
 
-CharacterAPI.prototype.planetaryPins = function(planetID) {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.PLANETARY_PINS, 2, this.auth, {planetID: planetID}, GenericBuilder_(PlanetaryPin));
+/**
+ * Retrieve planetary pins for a planetary colony.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} planetID ID of planet for which pins will be retrieved
+ * @returns {Array<PlanetaryPin>} array of planetary pins
+ */
+function charPlanetaryPins(auth, planetID) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.PLANETARY_PINS, 2, auth, {planetID: planetID}, GenericBuilder_(PlanetaryPin));
 };
 
-CharacterAPI.prototype.planetaryRoutes = function(planetID) {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.PLANETARY_ROUTES, 2, this.auth, {planetID: planetID}, GenericBuilder_(PlanetaryRoute));
+/**
+ * Retrieve planetary routes for a planetary colony.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} planetID ID of planet for which routes will be retrieved
+ * @returns {Array<PlanetaryRoute>} array of planetary routes
+ */
+function charPlanetaryRoutes(auth, planetID) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.PLANETARY_ROUTES, 2, auth, {planetID: planetID}, GenericBuilder_(PlanetaryRoute));
 };
 
-CharacterAPI.prototype.planetaryLinks = function(planetID) {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.PLANETARY_LINKS, 2, this.auth, {planetID: planetID}, GenericBuilder_(PlanetaryLink));
+/**
+ * Retrieve planetary links for a planetary colony.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} planetID ID of planet for which links will be retrieved
+ * @returns {Array<PlanetaryLink>} array of planetary links
+ */
+function charPlanetaryLinks(auth, planetID) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.PLANETARY_LINKS, 2, auth, {planetID: planetID}, GenericBuilder_(PlanetaryLink));
 };
 
-CharacterAPI.prototype.research = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.RESEARCH, 2, this.auth, {}, GenericBuilder_(Research));
+/**
+ * Retrieve character research.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Research>} array of character research
+ */
+function charResearch(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.RESEARCH, 2, auth, {}, GenericBuilder_(Research));
 };
 
-CharacterAPI.prototype.skillInTraining = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.SKILL_IN_TRAINING, 2, this.auth, {},
+/**
+ * Retrieve character skill in training.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {SkillInTraining} current character skill in training
+ */
+function charSkillInTraining(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.SKILL_IN_TRAINING, 2, auth, {},
       function(el) { return new SkillInTraining(el) });
 };
 
-CharacterAPI.prototype.skillQueue = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.SKILL_QUEUE, 2, this.auth, {}, GenericBuilder_(SkillInQueue));
+/**
+ * Retrieve character skill queue.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<SkillInQueue>} array of character skills in queue
+ */
+function charSkillQueue(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.SKILL_QUEUE, 2, auth, {}, GenericBuilder_(SkillInQueue));
 };
 
-CharacterAPI.prototype.standings = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.STANDINGS, 2, this.auth, {}, StandingBuilder_(true));
+/**
+ * Retrieve character standings.  Standings are stored in one of three arrays
+ * in the returned object:
+ *
+ * <ol>
+ * <li> agents - standings with agents
+ * <li> NPCCorporations - standings with NPC corporations
+ * <li> factions - standings with factions
+ * </ol>
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {StandingList} character standing list
+ */
+function charStandings(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.STANDINGS, 2, auth, {}, StandingBuilder_(true));
 };
 
-CharacterAPI.prototype.upcomingCalendarEvents = function() {
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.UPCOMING_CALENDAR_EVENTS, 2, this.auth, {}, GenericBuilder_(UpcomingCalendarEvent));
+/**
+ * Retrieve upcoming calendar events.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<UpcomingCalendarEvent>} array of upcoming calendar events
+ */
+function charUpcomingCalendarEvents(auth) {
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.UPCOMING_CALENDAR_EVENTS, 2, auth, {}, GenericBuilder_(UpcomingCalendarEvent));
 };
 
-CharacterAPI.prototype.walletJournal = function(rowCount, fromID) {
+/**
+ * Retrieve character wallet journal.  If "fromID" is defined, then only wallet journal entries
+ * with a journal ID before "fromID" will be retrieved (used for walking backwards).
+ * If "rowCount" is specified, then at most "rowCount" rows will be returned.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} fromID max journal ID to return for this call
+ * @param {number} rowCount limit on number of records returned
+ * @returns {Array<WalletJournal>} array of character journal entries
+ */
+function charWalletJournal(auth, rowCount, fromID) {
   var args = { accountKey: 1000 };
   if (rowCount !== undefined) args['rowCount'] = rowCount;
   if (fromID !== undefined) args['fromID'] = fromID;
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.WALLET_JOURNAL, 2, this.auth, args, GenericBuilder_(WalletJournal));
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.WALLET_JOURNAL, 2, auth, args, GenericBuilder_(WalletJournal));
 };
 
-CharacterAPI.prototype.walletTransaction = function(rowCount, fromID) {
+/**
+ * Retrieve character wallet transactions.  If "fromID" is defined, then only wallet transactions
+ * with a transaction ID before "fromID" will be retrieved (used for walking backwards).
+ * If "rowCount" is specified, then at most "rowCount" rows will be returned.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} fromID max transaction ID to return for this call
+ * @param {number} rowCount limit on number of records returned
+ * @returns {Array<WalletTransaction>} array of character wallet transactions
+ */
+function charWalletTransaction(auth, rowCount, fromID) {
   var args = { accountKey: 1000 };
   if (rowCount !== undefined) args['rowCount'] = rowCount;
   if (fromID !== undefined) args['fromID'] = fromID;
-  return retrieveXML_(ApiPath.CHARACTER, ApiPage.WALLET_TRANSACTIONS, 2, this.auth, args, GenericBuilder_(WalletTransaction));
+  return retrieveXML_(ApiPath.CHARACTER, ApiPage.WALLET_TRANSACTIONS, 2, auth, args, GenericBuilder_(WalletTransaction));
 };
 
 // ------------------------------------------------------------------------------------------
@@ -659,171 +895,370 @@ CharacterAPI.prototype.walletTransaction = function(rowCount, fromID) {
 // ------------------------------------------------------------------------------------------
 
 /**
- * Create an instance of the Corporation API.  Use this instance to retrieve corporation data.
+ * Retrieve corporation account balances.
  *
- * @param {number} keyid EVE API key ID
- * @param {string} vcode EVE API vCode
- * @constructor
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<AccountBalance>} array of character account balances
  */
-function CorporationAPI(keyid, vcode) {
-  this.keyID = keyid;
-  this.vCode = vcode;
-  this.auth = new ApiAuth(keyid, vcode);
-}
-
-CorporationAPI.prototype.accountBalances = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.ACCOUNT_BALANCE, 2, this.auth, {}, GenericBuilder_(AccountBalance));
-};
-
-CorporationAPI.prototype.assetList = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.ASSET_LIST, 2, this.auth, {}, GenericBuilder_(Asset));
-};
-
-CorporationAPI.prototype.blueprints = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.BLUEPRINTS, 2, this.auth, {}, GenericBuilder_(Blueprint));
-};
-
-CorporationAPI.prototype.contactList = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTACT_LIST, 2, this.auth, {},
-      function(el) { return new ContactList(el) });
-};
-
-CorporationAPI.prototype.containerLog = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTAINER_LOG, 2, this.auth, {}, GenericBuilder_(ContainerLog));
-};
-
-CorporationAPI.prototype.contracts = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTRACTS, 1, this.auth, {}, GenericBuilder_(Contract));
-};
-
-CorporationAPI.prototype.contractBids = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTRACT_BIDS, 1, this.auth, {}, GenericBuilder_(ContractBid));
-};
-
-CorporationAPI.prototype.contractItems = function(contractID) {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTRACT_ITEMS, 1, this.auth,
-      { contractID: contractID }, GenericBuilder_(ContractItem));
-};
-
-CorporationAPI.prototype.sheet = function(corpID) {
-  var args = {};
-  if (corpID !== undefined) args['corporationID'] = corpID;
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CORPORATION_SHEET, 2, this.auth, args,
-      function(el) { return new CorporationSheet(el) });
-};
-
-CorporationAPI.prototype.facilities = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.FACILITIES, 2, this.auth,
-      {}, GenericBuilder_(Facility));
-};
-
-CorporationAPI.prototype.facWarStats = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.FACT_WAR_STATS, 2, this.auth, {},
-      function(el) { return new FacWarStats(el) });
-};
-
-CorporationAPI.prototype.industryJobs = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.INDUSTRY_JOBS, 2, this.auth, {}, GenericBuilder_(IndustryJob));
-};
-
-CorporationAPI.prototype.industryJobsHistory = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.INDUSTRY_JOBS_HISTORY, 2, this.auth, {}, GenericBuilder_(IndustryJob));
-};
-
-CorporationAPI.prototype.killMails = function(fromID, rowCount) {
-  var args = {};
-  if (fromID !== undefined) args['fromID'] = fromID;
-  if (rowCount !== undefined) args['rowCount'] = rowCount;
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.KILL_LOG, 2, this.auth, args, GenericBuilder_(KillMail));
-};
-
-CorporationAPI.prototype.locations = function() {
-  var args = [];
-  for (var i = 0; i < arguments.length; i++) {
-    args.push(arguments[i]);
-  }
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.LOCATIONS, 2, this.auth,
-      { IDs: args.join(',')}, GenericBuilder_(Location));
-};
-
-CorporationAPI.prototype.marketOrders = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MARKET_ORDERS, 2, this.auth, {}, GenericBuilder_(MarketOrder));
-};
-
-CorporationAPI.prototype.medalList = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEDALS, 2, this.auth, {},
-      function(el) { return new MedalList(el) });
-};
-
-CorporationAPI.prototype.memberMedals = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_MEDALS, 2, this.auth, {},
-      function(el) { return new MedalList(el) });
-};
-
-CorporationAPI.prototype.memberSecurity = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_SECURITY, 2, this.auth, {}, GenericBuilder_(MemberSecurity));
-};
-
-CorporationAPI.prototype.memberSecurityLog = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_SECURITY_LOG, 2, this.auth, {}, GenericBuilder_(MemberSecurityLog));
-};
-
-CorporationAPI.prototype.memberTracking = function(extended) {
-  var args = {};
-  if (extended) args['extended'] = 1;
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_TRACKING, 2, this.auth, args, GenericBuilder_(MemberTracking));
-};
-
-CorporationAPI.prototype.outpostList = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.OUTPOST_LIST, 2, this.auth, {}, GenericBuilder_(Outpost));
-};
-
-CorporationAPI.prototype.outpostService = function(itemid) {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.OUTPOST_SERVICEDETAIL, 2, this.auth, {itemID: itemid}, GenericBuilder_(OutpostService));
-};
-
-CorporationAPI.prototype.shareholderList = function(itemid) {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.SHAREHOLDERS, 2, this.auth, {},
-      function(el) { return new ShareholderList(el); });
-};
-
-CorporationAPI.prototype.standings = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.STANDINGS, 2, this.auth, {}, StandingBuilder_(false));
-};
-
-CorporationAPI.prototype.starbaseList = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.STARBASE_LIST, 2, this.auth, {}, GenericBuilder_(Starbase));
-};
-
-CorporationAPI.prototype.starbaseDetail = function(itemid) {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.STARBASE_DETAIL, 2, this.auth, {itemID: itemid},
-      function(el) { return new StarbaseDetail(el) });
-};
-
-CorporationAPI.prototype.titles = function() {
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.TITLES, 2, this.auth, {}, GenericBuilder_(Title));
-};
-
-CorporationAPI.prototype.walletJournal = function(accountKey, rowCount, fromID) {
-  var args = { accountKey: accountKey };
-  if (rowCount !== undefined) args['rowCount'] = rowCount;
-  if (fromID !== undefined) args['fromID'] = fromID;
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.WALLET_JOURNAL, 2, this.auth, args, GenericBuilder_(WalletJournal));
+function corpAccountBalances(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.ACCOUNT_BALANCE, 2, auth, {}, GenericBuilder_(AccountBalance));
 };
 
 /**
- * Retrieve corporation wallet transactions
+ * Retrieve corporation assets.  Contained assets are stored in the "assets" array of the container.
  *
- * @param {number} accountKey wallet account key
- * @param {number} rowCount (optional) number of rows to return
- * @param {number} fromID (optional) retrieve wallet transactions with a transaction ID less than this value
- * @returns {Object} an array of WalletTransaction objects
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Asset>} array of character assets
  */
-CorporationAPI.prototype.walletTransaction = function(accountKey, rowCount, fromID) {
+function corpAssetList(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.ASSET_LIST, 2, auth, {}, GenericBuilder_(Asset));
+};
+
+/**
+ * Retrieve corporation blueprints.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Blueprint>} array of character blueprints
+ */
+function corpBlueprints(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.BLUEPRINTS, 2, auth, {}, GenericBuilder_(Blueprint));
+};
+
+/**
+ * Retrieve corporation contact list.  Contacts are stored in one of three arrays
+ * in the returned object:
+ *
+ * <ol>
+ * <li> contactList - regular contacts.
+ * <li> corporateContactList - corporate contacts.
+ * <li> allianceContactList - alliance contacts.
+ * </ol>
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {ContactList} corporation contact list
+ */
+function corpContactList(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTACT_LIST, 2, auth, {},
+      function(el) { return new ContactList(el) });
+};
+
+/**
+ * Retrieve container log.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<ContainerLog>} array of container log entries
+ */
+function corpContainerLog(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTAINER_LOG, 2, auth, {}, GenericBuilder_(ContainerLog));
+};
+
+/**
+ * Retrieve corporation contracts.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Contract>} array of corporation contracts
+ */
+function corpContracts(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTRACTS, 1, auth, {}, GenericBuilder_(Contract));
+};
+
+/**
+ * Retrieve contract bids for corporation contracts.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<ContractBid>} array of contract bids
+ */
+function corpContractBids(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTRACT_BIDS, 1, auth, {}, GenericBuilder_(ContractBid));
+};
+
+/**
+ * Retrieve contract items for the specified corporation contract.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} contractID ID of contract for which items will be retrieved
+ * @returns {Array<ContractItem>} array of contract items
+ */
+function corpContractItems(auth, contractID) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTRACT_ITEMS, 1, auth,
+      { contractID: contractID }, GenericBuilder_(ContractItem));
+};
+
+/**
+ * Retrieve corporation sheet.  If "corpID" is specified, then retrieve the
+ * corporation sheet for the corporation with the specified ID.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} corpID if specified, then retrieve the sheet for the specified corporation
+ * @returns {CorporationSheet} corporation sheet
+ */
+function corpSheet(auth, corpID) {
+  var args = {};
+  if (corpID !== undefined) args['corporationID'] = corpID;
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CORPORATION_SHEET, 2, auth, args,
+      function(el) { return new CorporationSheet(el) });
+};
+
+/**
+ * Retrieve corporation facilities.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Facility>} array of corporation facilities
+ */
+function corpFacilities(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.FACILITIES, 2, auth,
+      {}, GenericBuilder_(Facility));
+};
+
+/**
+ * Retrieve corporation faction war stats.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {FacWarStats} faction war stats for this corporation
+ */
+function corpFacWarStats(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.FACT_WAR_STATS, 2, auth, {},
+      function(el) { return new FacWarStats(el) });
+};
+
+/**
+ * Retrieve corporation industry jobs.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<IndustryJob>} array of corporation industry jobs
+ */
+function corpIndustryJobs(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.INDUSTRY_JOBS, 2, auth, {}, GenericBuilder_(IndustryJob));
+};
+
+/**
+ * Retrieve historic corporation industry jobs.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<IndustryJob>} array of historic corporation industry jobs
+ */
+function corpIndustryJobsHistory(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.INDUSTRY_JOBS_HISTORY, 2, auth, {}, GenericBuilder_(IndustryJob));
+};
+
+/**
+ * Retrieve a selection of corporation kill mails.  If "fromID" is defined, then only kill mails with a kill ID
+ * before "fromID" will be retrieved (used for walking backwards).  If "rowCount" is specified,
+ * then at most "rowCount" rows will be returned.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} fromID max kill ID to return for this call
+ * @param {number} rowCount limit on number of records returned
+ * @returns {Array<KillMail>} array of corporation kill mails
+ */
+function corpKillMails(auth, fromID, rowCount) {
+  var args = {};
+  if (fromID !== undefined) args['fromID'] = fromID;
+  if (rowCount !== undefined) args['rowCount'] = rowCount;
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.KILL_LOG, 2, auth, args, GenericBuilder_(KillMail));
+};
+
+/**
+ * Retrieve locations for a set of item IDs owned by this corporation.  Item IDs should be
+ * specified after the "auth" argument.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Location>} array of item locations
+ */
+function corpLocations(auth) {
+  var args = [];
+  for (var i = 1; i < arguments.length; i++) {
+    args.push(arguments[i]);
+  }
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.LOCATIONS, 2, auth,
+      { IDs: args.join(',')}, GenericBuilder_(Location));
+};
+
+/**
+ * Retrieve corporation market orders.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<MarketOrder>} array of corporation market orders
+ */
+function corpMarketOrders(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MARKET_ORDERS, 2, auth, {}, GenericBuilder_(MarketOrder));
+};
+
+/**
+ * Retrieve list of defined corporation medals.  Medals are stored in
+ * the "medals" array in the returned object.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {MedalList} corporation medals
+ */
+function corpMedalList(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEDALS, 2, auth, {},
+      function(el) { return new MedalList(el) });
+};
+
+/**
+ * Retrieve list of medals awarded to members.  Medals are stored in the
+ * "issuedMedals" array in the returned object.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {MedalList} awarded corporation medals
+ */
+function corpMemberMedals(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_MEDALS, 2, auth, {},
+      function(el) { return new MedalList(el) });
+};
+
+/**
+ * Retrieve corporation member security records.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<MemberSecurity>} array of corporation member security records
+ */
+function corpMemberSecurity(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_SECURITY, 2, auth, {}, GenericBuilder_(MemberSecurity));
+};
+
+/**
+ * Retrieve corporation member security log.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<MemberSecurityLog>} array of corporation member security log entries
+ */
+function corpMemberSecurityLog(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_SECURITY_LOG, 2, auth, {}, GenericBuilder_(MemberSecurityLog));
+};
+
+/**
+ * Retrieve corporation member tracking.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<MemberTracking>} array of corporation member tracking records
+ */
+function corpMemberTracking(auth, extended) {
+  var args = {};
+  if (extended) args['extended'] = 1;
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_TRACKING, 2, auth, args, GenericBuilder_(MemberTracking));
+};
+
+/**
+ * Retrieve list of corporation outposts.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Outpost>} array of corporation outposts
+ */
+function corpOutpostList(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.OUTPOST_LIST, 2, auth, {}, GenericBuilder_(Outpost));
+};
+
+/**
+ * Retrieve services for a corporation outpost.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} itemID item ID of outpost for which services will be retrieved.
+ * @returns {Array<OutpostService>} array of services for the specified outpost.
+ */
+function corpOutpostService(auth, itemid) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.OUTPOST_SERVICEDETAIL, 2, auth, {itemID: itemid}, GenericBuilder_(OutpostService));
+};
+
+/**
+ * Retrieve corporation shareholder list.  Shareholders are stored in one of two arrays
+ * in the returned object:
+ *
+ * <ol>
+ * <li> characters - shareholders which are characters
+ * <li> corporations - shareholders which are corporations
+ * </ol>
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {ShareholderList} corporation shareholders
+ */
+function corpShareholderList(auth, itemid) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.SHAREHOLDERS, 2, auth, {},
+      function(el) { return new ShareholderList(el); });
+};
+
+/**
+ * Retrieve corporation standings.  Standings are stored in one of three arrays
+ * in the returned object:
+ *
+ * <ol>
+ * <li> agents - standings with agents
+ * <li> NPCCorporations - standings with NPC corporations
+ * <li> factions - standings with factions
+ * </ol>
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {StandingList} corporation standing list
+ */
+function corpStandings(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.STANDINGS, 2, auth, {}, StandingBuilder_(false));
+};
+
+/**
+ * Retrieve list of corporation starbases.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Starbase>} array of corporation starbases
+ */
+function corpStarbaseList(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.STARBASE_LIST, 2, auth, {}, GenericBuilder_(Starbase));
+};
+
+/**
+ * Retrieve details for a corporation starbase.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} itemID item ID of the starbase for which details will be retrieved
+ * @returns {StarbaseDetail} details for the specified corporation starbase
+ */
+function corpStarbaseDetail(auth, itemid) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.STARBASE_DETAIL, 2, auth, {itemID: itemid},
+      function(el) { return new StarbaseDetail(el) });
+};
+
+/**
+ * Retrieve corporation titles.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<Title>} array of corporation titles
+ */
+function corpTitles(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.TITLES, 2, auth, {}, GenericBuilder_(Title));
+};
+
+/**
+ * Retrieve corporation wallet journal.  If "fromID" is defined, then only wallet journal entries
+ * with a journal ID before "fromID" will be retrieved (used for walking backwards).
+ * If "rowCount" is specified, then at most "rowCount" rows will be returned.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} fromID max journal ID to return for this call
+ * @param {number} rowCount limit on number of records returned
+ * @returns {Array<WalletJournal>} array of corporation journal entries
+ */
+function corpWalletJournal(auth, accountKey, rowCount, fromID) {
   var args = { accountKey: accountKey };
   if (rowCount !== undefined) args['rowCount'] = rowCount;
   if (fromID !== undefined) args['fromID'] = fromID;
-  return retrieveXML_(ApiPath.CORPORATION, ApiPage.WALLET_TRANSACTIONS, 2, this.auth, args, GenericBuilder_(WalletTransaction));
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.WALLET_JOURNAL, 2, auth, args, GenericBuilder_(WalletJournal));
+};
+
+/**
+ * Retrieve corporation wallet transactions.  If "fromID" is defined, then only wallet transactions
+ * with a transaction ID before "fromID" will be retrieved (used for walking backwards).
+ * If "rowCount" is specified, then at most "rowCount" rows will be returned.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @param {number} fromID max transaction ID to return for this call
+ * @param {number} rowCount limit on number of records returned
+ * @returns {Array<WalletTransaction>} array of corporation wallet transactions
+ */
+function corpWalletTransaction(auth, accountKey, rowCount, fromID) {
+  var args = { accountKey: accountKey };
+  if (rowCount !== undefined) args['rowCount'] = rowCount;
+  if (fromID !== undefined) args['fromID'] = fromID;
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.WALLET_TRANSACTIONS, 2, auth, args, GenericBuilder_(WalletTransaction));
 };
 
 
