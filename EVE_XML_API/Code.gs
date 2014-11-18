@@ -898,7 +898,7 @@ function charWalletTransaction(auth, rowCount, fromID) {
  * Retrieve corporation account balances.
  *
  * @param {ApiAuth} auth ApiAuth holding credentials
- * @returns {Array<AccountBalance>} array of character account balances
+ * @returns {Array<AccountBalance>} array of corporation account balances
  */
 function corpAccountBalances(auth) {
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.ACCOUNT_BALANCE, 2, auth, {}, GenericBuilder_(AccountBalance));
@@ -908,7 +908,7 @@ function corpAccountBalances(auth) {
  * Retrieve corporation assets.  Contained assets are stored in the "assets" array of the container.
  *
  * @param {ApiAuth} auth ApiAuth holding credentials
- * @returns {Array<Asset>} array of character assets
+ * @returns {Array<Asset>} array of corporation assets
  */
 function corpAssetList(auth) {
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.ASSET_LIST, 2, auth, {}, GenericBuilder_(Asset));
@@ -918,7 +918,7 @@ function corpAssetList(auth) {
  * Retrieve corporation blueprints.
  *
  * @param {ApiAuth} auth ApiAuth holding credentials
- * @returns {Array<Blueprint>} array of character blueprints
+ * @returns {Array<Blueprint>} array of corporation blueprints
  */
 function corpBlueprints(auth) {
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.BLUEPRINTS, 2, auth, {}, GenericBuilder_(Blueprint));
