@@ -84,6 +84,7 @@ ApiPage = {
   CONTRACTS : "Contracts",
   CONTRACT_BIDS : "ContractBids",
   CONTRACT_ITEMS : "ContractItems",
+  CUSTOMS_OFFICES : "CustomsOffices",
   LOCATIONS : "Locations",
   MAIL_BODIES : "MailBodies",
   MAILING_LISTS : "MailingLists",
@@ -982,6 +983,17 @@ function corpContractBids(auth) {
 function corpContractItems(auth, contractID) {
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.CONTRACT_ITEMS, 1, auth,
       { contractID: contractID }, GenericBuilder_(ContractItem));
+};
+
+/**
+ * Retrieve corporation customs offices.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {Array<CustomsOffice>} array of customs offices
+ */
+function corpCustomsOffices(auth) {
+  return retrieveXML_(ApiPath.CORPORATION, ApiPage.CUSTOMS_OFFICES, 2, auth,
+      {}, GenericBuilder_(CustomsOffice));
 };
 
 /**
@@ -2336,6 +2348,36 @@ function MemberSecurity(root) {
               { name: 'titles', ctor: CorporationTitle, tgt: this.titles }
               ];
   GenericListBuilder_(root, cols, 'row/rowset');
+}
+
+// ------------------------------------------------------------------------------------------
+// CustomsOffice
+// ------------------------------------------------------------------------------------------
+function CustomsOffice(root) {
+  // long itemID
+  // int solarSystemID
+  // string solarSystemName
+  // int reinforceHour
+  // boolean allowAlliance
+  // boolean allowStandings
+  // double standingLevel
+  // double taxRateAlliance
+  // double taxRateCorp
+  // double taxRateStandingHigh
+  // double taxRateStandingGood
+  // double taxRateStandingNeutral
+  // double taxRateStandingBad
+  // double taxRateStandingHorrible
+  AllAttributeSetter_(root, this, 'row', parseFloat);
+  // Fix fields
+  SimpleAttributeSetter_(root, this, 'itemID', 'row', 'itemID', parseInt);
+  SimpleAttributeSetter_(root, this, 'solarSystemID', 'row', 'solarSystemID', parseInt);
+  SimpleAttributeSetter_(root, this, 'solarSystemName', 'row', 'solarSystemName');
+  SimpleAttributeSetter_(root, this, 'reinforceHour', 'row', 'reinforceHour', parseInt);
+  SimpleAttributeSetter_(root, this, 'allowAlliance', 'row', 'allowAlliance', parseInt);
+  SimpleAttributeSetter_(root, this, 'allowStandings', 'row', 'allowStandings', parseInt);
+  if (this.allowAlliance !== undefined) this.allowAlliance = this.allowAlliance === 1;
+  if (this.allowStandings !== undefined) this.allowStandings = this.allowStandings === 1;
 }
 
 // ------------------------------------------------------------------------------------------
