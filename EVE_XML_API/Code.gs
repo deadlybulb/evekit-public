@@ -6,13 +6,13 @@
  *   Prosper Blog (http://eve-prosper.blogspot.co.uk/2014/07/building-better-spreadsheets-crius.html)
  *
  * Author: EveKit Devs
- * EVE Release: Phoebe
+ * EVE Release: Proteus
  *
  * License:
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 eve-kit.org
+ * Copyright (c) 2014-2015 eve-kit.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -60,7 +60,8 @@ ApiPath = {
   EVE : "/eve",
   MAP : "/map",
   NONE : "",
-  SERVER : "/server"
+  SERVER : "/server",
+  API : "/api"
 };
 
 /**
@@ -69,6 +70,7 @@ ApiPath = {
 ApiPage = {
   ACCOUNT_STATUS : "AccountStatus",
   CHARACTERS : "Characters",
+  API_KEY_INFO : "APIKeyInfo",
   ACCOUNT_BALANCE : "AccountBalance",
   ASSET_LIST : "AssetList",
   CALENDAR_EVENT_ATTENDEES : "CalendarEventAttendees",
@@ -117,20 +119,22 @@ ApiPage = {
   OUTPOST_SERVICEDETAIL : "OutpostServiceDetail",
   TITLES : "Titles",
   ALLIANCE_LIST : "AllianceList",
-  CERTIFICATE_TREE : "CertificateTree",
+  CHARACTER_AFFILIATION : "CharacterAffiliation",
   CHARACTER_ID : "CharacterID",
   CHARACTER_NAME : "CharacterName",
+  CHARACTER_INFO : "CharacterInfo",
   CONQUERABLE_STATION_LIST : "ConquerableStationList",
   ERROR_LIST : "ErrorList",
   FACT_WAR_TOP_STATS : "FacWarTopStats",
   REF_TYPES : "RefTypes",
   SKILL_TREE : "SkillTree",
+  TYPE_NAME : "TypeName",
   FACTION_WAR_SYSTEMS : "FacWarSystems",
   JUMPS : "Jumps",
   KILLS : "Kills",
   SOVEREIGNTY : "Sovereignty",
   SERVER_STATUS : "ServerStatus",
-  CHARACTER_INFO : "CharacterInfo"
+  CALL_LIST : "CallList"
 };
 
 /**
@@ -156,8 +160,12 @@ function createAPIParams_(version, auth, params) {
   var result = {};
   result.version = version;
   if (auth !== undefined) {
-    result.keyID = auth.keyID;
-    result.vCode = auth.vCode;
+    if (auth.keyID !== undefined) {
+      result.keyID = auth.keyID;
+    }
+    if (auth.vCode !== undefined) {
+      result.vCode = auth.vCode;
+    }
     if (auth.charID !== undefined) {
       result.characterID = auth.charID;
     }
@@ -382,7 +390,7 @@ function EveDateParser_(dt) {
   var dt_pair = dt.split(' ');
   var dt_day = dt_pair[0].split('-');
   var dt_tm = dt_pair[1].split(':');
-  return new Date(dt_day[0], dt_day[1] - 1, dt_day[2], dt_tm[0], dt_tm[1], dt_tm[2]);
+  return new Date(Date.UTC(dt_day[0], dt_day[1] - 1, dt_day[2], dt_tm[0], dt_tm[1], dt_tm[2]));
 }
 
 /**
@@ -435,7 +443,7 @@ function GenericBuilder_(ctor) {
  * Build lists of objects by finding children at the given path.  Cols is an array containing
  * elements of the form:
  * {
- *   name : value of the "name" attribute a an element must have in order for its children to be processed
+ *   name : value of the "name" attribute an element must have in order for its children to be processed
  *   ctor : the constructor to invoke for each child of the matching element
  *   tgt : a reference to the array which show hold the constructed objects
  * }
@@ -470,7 +478,7 @@ function GenericListBuilder_(root, cols, path) {
  */
 function accountStatus(auth) {
   return retrieveXML_(ApiPath.ACCOUNT, ApiPage.ACCOUNT_STATUS, 2, auth, {},
-      function(el) { return new AccountStatus(el) });
+      function(el) { return new AccountStatus(el); });
 }
 
 /**
@@ -481,6 +489,17 @@ function accountStatus(auth) {
  */
 function accountCharacters(auth){
   return retrieveXML_(ApiPath.ACCOUNT, ApiPage.CHARACTERS, 1, auth, {}, GenericBuilder_(Character));
+};
+
+/**
+ * Retrieve API key information.
+ *
+ * @param {ApiAuth} auth ApiAuth holding credentials
+ * @returns {APIKeyInfo} information about the API Key used to make the call
+ */
+function accountAPIKeyInfo(auth){
+  return retrieveXML_(ApiPath.ACCOUNT, ApiPage.API_KEY_INFO, 2, auth, {},
+                      function(el) { return new APIKeyInfo(el); });
 };
 
 // ------------------------------------------------------------------------------------------
@@ -742,7 +761,8 @@ function charNotifications(auth) {
 };
 
 /**
- * Retrieve character notification bodies.
+ * Retrieve character notification bodies.  This is a variable arguments method.  After the ApiAuth, pass
+ * one or more notification IDs to retrieve.
  *
  * @param {ApiAuth} auth ApiAuth holding credentials
  * @returns {Array<NotificationText>} array of character notification bodies
@@ -1008,7 +1028,7 @@ function corpSheet(auth, corpID) {
   var args = {};
   if (corpID !== undefined) args['corporationID'] = corpID;
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.CORPORATION_SHEET, 2, auth, args,
-      function(el) { return new CorporationSheet(el) });
+      function(el) { return new CorporationSheet(el); });
 };
 
 /**
@@ -1030,7 +1050,7 @@ function corpFacilities(auth) {
  */
 function corpFacWarStats(auth) {
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.FACT_WAR_STATS, 2, auth, {},
-      function(el) { return new FacWarStats(el) });
+      function(el) { return new FacWarStats(el); });
 };
 
 /**
@@ -1105,7 +1125,7 @@ function corpMarketOrders(auth) {
  */
 function corpMedalList(auth) {
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEDALS, 2, auth, {},
-      function(el) { return new MedalList(el) });
+      function(el) { return new MedalList(el); });
 };
 
 /**
@@ -1117,7 +1137,7 @@ function corpMedalList(auth) {
  */
 function corpMemberMedals(auth) {
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.MEMBER_MEDALS, 2, auth, {},
-      function(el) { return new MedalList(el) });
+      function(el) { return new MedalList(el); });
 };
 
 /**
@@ -1273,6 +1293,213 @@ function corpWalletTransaction(auth, accountKey, rowCount, fromID) {
   return retrieveXML_(ApiPath.CORPORATION, ApiPage.WALLET_TRANSACTIONS, 2, auth, args, GenericBuilder_(WalletTransaction));
 };
 
+// ------------------------------------------------------------------------------------------
+// EVEAPI
+// ------------------------------------------------------------------------------------------
+
+/**
+ * Retrieve list of alliances.
+ *
+ * @returns {Array<Alliance>} array of current alliances
+ */
+function eveAllianceList() {
+  return retrieveXML_(ApiPath.EVE, ApiPage.ALLIANCE_LIST, 2, undefined, {}, GenericBuilder_(Alliance));
+}
+
+/**
+ * Retrieve character affiliations.  This is a variable arguments method.  Pass in one or more character IDs
+ * for which affiliation should be retrieved.
+ *
+ * @returns {Array<APICharacter>} array of requested character affiliations
+ */
+function eveCharacterAffiliation() {
+  var args = [];
+  for (var i = 0; i < arguments.length; i++) {
+    args.push(arguments[i]);
+  }
+  return retrieveXML_(ApiPath.EVE, ApiPage.CHARACTER_AFFILIATION, 2, undefined,
+      { ids: args.join(',')}, GenericBuilder_(APICharacter));
+}
+
+/**
+ * Map character names to character IDs.  This is a variable arguments method.  Pass in one or more character names
+ * for which the mapping should be performed.
+ *
+ * @returns {Array<Character>} array of requested character mappings
+ */
+function eveCharacterID() {
+  var args = [];
+  for (var i = 0; i < arguments.length; i++) {
+    args.push(arguments[i]);
+  }
+  return retrieveXML_(ApiPath.EVE, ApiPage.CHARACTER_ID, 2, undefined,
+      { names: args.join(',')}, GenericBuilder_(Character));
+}
+
+/**
+ * Look up character information by character ID.  There are two variants of this function which are determined by the values
+ * stored in the "auth" argument.  If the "auth" argument contains a valid key, vcode and character ID, then the full
+ * character info record is returned.  If the "auth" argument only contains a character ID, or only the character ID is
+ * valid, then a limited character info record is returned.
+ *
+ * @param {ApiAuth} auth ApiAuth describing character to look up (see notes above).
+ * @returns {CharacterInfo} array of requested character mappings
+ */
+function eveCharacterInfo(auth) {
+  return retrieveXML_(ApiPath.EVE, ApiPage.CHARACTER_INFO, 2, auth, {},
+      function(el) { return new CharacterInfo(el); });
+}
+
+/**
+ * Map character IDs to character names.  This is a variable arguments method.  Pass in one or more character IDs
+ * for which the mapping should be performed.
+ *
+ * @returns {Array<Character>} array of requested character mappings
+ */
+function eveCharacterName() {
+  var args = [];
+  for (var i = 0; i < arguments.length; i++) {
+    args.push(arguments[i]);
+  }
+  return retrieveXML_(ApiPath.EVE, ApiPage.CHARACTER_NAME, 2, undefined,
+      { ids: args.join(',')}, GenericBuilder_(Character));
+}
+
+/**
+ * Retrieve list of conquerable stations (including outposts).
+ *
+ * @returns {Array<ConquerableStation>} array of conquerable stations
+ */
+function eveConquerableStationList() {
+  return retrieveXML_(ApiPath.EVE, ApiPage.CONQUERABLE_STATION_LIST, 2, undefined, {}, GenericBuilder_(ConquerableStation));
+}
+
+/**
+ * Retrieve list of error codes.
+ *
+ * @returns {Array<ErrorCode>} array of error codes and text
+ */
+function eveErrorList() {
+  return retrieveXML_(ApiPath.EVE, ApiPage.ERROR_LIST, 2, undefined, {}, GenericBuilder_(ErrorCode));
+}
+
+/**
+ * Retrieve faction war global stats.
+ *
+ * @returns {FacWarGlobalStats} faction war global stats
+ */
+function eveFacWarStats() {
+  return retrieveXML_(ApiPath.EVE, ApiPage.FACT_WAR_STATS, 2, undefined, {},
+      function(el) { return new FacWarGlobalStats(el); });
+}
+
+/**
+ * Retrieve faction war top 100 stats.
+ *
+ * @returns {FacWarTopStats} faction war top 100 stats
+ */
+function eveFacWarTopStats() {
+  return retrieveXML_(ApiPath.EVE, ApiPage.FACT_WAR_TOP_STATS, 2, undefined, {},
+      function(el) { return new FacWarTopStats(el); });
+}
+
+/**
+ * Retrieve list of ref (transaction) types.
+ *
+ * @returns {Array<RefType>} array of ref types
+ */
+function eveRefTypes() {
+  return retrieveXML_(ApiPath.EVE, ApiPage.REF_TYPES, 2, undefined, {}, GenericBuilder_(RefType));
+}
+
+/**
+ * Retrieve current EVE skill tree.
+ *
+ * @returns {Array<SkillGroup>} array of skill groups
+ */
+function eveSkillTree() {
+  return retrieveXML_(ApiPath.EVE, ApiPage.SKILL_TREE, 2, undefined, {}, GenericBuilder_(SkillGroup));
+}
+
+/**
+ * Map type IDs to type names.  This is a variable arguments method.  Pass in one or more type IDs
+ * for which the mapping should be performed.
+ *
+ * @returns {Array<TypeName>} array of requested type mappings
+ */
+function eveTypeName() {
+  var args = [];
+  for (var i = 0; i < arguments.length; i++) {
+    args.push(arguments[i]);
+  }
+  return retrieveXML_(ApiPath.EVE, ApiPage.TYPE_NAME, 2, undefined,
+      { ids: args.join(',')}, GenericBuilder_(TypeName));
+}
+
+// ------------------------------------------------------------------------------------------
+// Map API
+// ------------------------------------------------------------------------------------------
+/**
+ * Retrieve list of faction war systems.
+ *
+ * @returns {Array<FactionWarSystem>} array of faction war systems
+ */
+function mapFacWarSystems() {
+  return retrieveXML_(ApiPath.MAP, ApiPage.FACTION_WAR_SYSTEMS, 2, undefined, {}, GenericBuilder_(FactionWarSystem));
+}
+
+/**
+ * Retrieve list of ship jumps.
+ *
+ * @returns {Array<ShipJump>} array of ship jumps
+ */
+function mapJumps() {
+  return retrieveXML_(ApiPath.MAP, ApiPage.JUMPS, 2, undefined, {}, GenericBuilder_(ShipJump));
+}
+
+/**
+ * Retrieve list of kills.
+ *
+ * @returns {Array<KillStat>} array of kills
+ */
+function mapKills() {
+  return retrieveXML_(ApiPath.MAP, ApiPage.KILLS, 2, undefined, {}, GenericBuilder_(KillStat));
+}
+
+/**
+ * Retrieve system sovereignty list.
+ *
+ * @returns {Array<SystemSovereignty>} array of system sovereignty
+ */
+function mapSovereignty() {
+  return retrieveXML_(ApiPath.MAP, ApiPage.SOVEREIGNTY, 2, undefined, {}, GenericBuilder_(SystemSovereignty));
+}
+
+// ------------------------------------------------------------------------------------------
+// Server API
+// ------------------------------------------------------------------------------------------
+/**
+ * Retrieve server status.
+ *
+ * @returns {ServerStatus} current server status
+ */
+function serverStatus() {
+  return retrieveXML_(ApiPath.SERVER, ApiPage.SERVER_STATUS, 2, undefined, {},
+      function(el) { return new ServerStatus(el); });
+}
+
+// ------------------------------------------------------------------------------------------
+// API API
+// ------------------------------------------------------------------------------------------
+/**
+ * Retrieve API call list.
+ *
+ * @returns {APICallList} current API call list
+ */
+function apiCallList() {
+  return retrieveXML_(ApiPath.API, ApiPage.CALL_LIST, 2, undefined, {},
+      function(el) { return new APICallList(el); });
+}
 
 // ------------------------------------------------------------------------------------------
 // Response
@@ -1311,12 +1538,12 @@ function AccountStatus(root) {
   SimplePropertySetter_(root, this, 'createDate', 'eveapi/result/createDate', EveDateParser_);
   SimplePropertySetter_(root, this, 'logonCount', 'eveapi/result/logonCount', parseInt);
   SimplePropertySetter_(root, this, 'logonMinutes', 'eveapi/result/logonMinutes', parseInt);
-  var multiCharacterTraining = [];
+  var mct = [];
   var processor = function(el) {
-    multiCharacterTraining.push(new MultiCharacterTraining(el));
+    mct.push(new MultiCharacterTraining(el));
   };
   ProcessChildren_(root, 'eveapi/result/rowset', processor);
-  this.multiCharacterTraining = multiCharacterTraining;
+  this.multiCharacterTraining = mct;
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1331,6 +1558,47 @@ function Character(root) {
   SimpleAttributeSetter_(root, this, 'characterID', 'row', 'characterID', parseInt);
   SimpleAttributeSetter_(root, this, 'corporationName', 'row', 'corporationName');
   SimpleAttributeSetter_(root, this, 'corporationID', 'row', 'corporationID', parseInt);
+}
+
+// ------------------------------------------------------------------------------------------
+// APIKeyInfo
+// ------------------------------------------------------------------------------------------
+function APICharacter(root) {
+  // long characterID
+  // string characterName
+  // long corporationID
+  // string corporationName
+  // long allianceID
+  // string allianceName
+  // long factionID
+  // string factionName
+  SimpleAttributeSetter_(root, this, 'characterID', 'row', 'characterID', parseInt);
+  SimpleAttributeSetter_(root, this, 'characterName', 'row', 'characterName');
+  SimpleAttributeSetter_(root, this, 'corporationID', 'row', 'corporationID', parseInt);
+  SimpleAttributeSetter_(root, this, 'corporationName', 'row', 'corporationName');
+  SimpleAttributeSetter_(root, this, 'allianceID', 'row', 'allianceID', parseInt);
+  SimpleAttributeSetter_(root, this, 'allianceName', 'row', 'allianceName');
+  SimpleAttributeSetter_(root, this, 'factionID', 'row', 'factionID', parseInt);
+  SimpleAttributeSetter_(root, this, 'factionName', 'row', 'factionName');
+}
+
+function APIKeyInfo(root) {
+  // long accessMask
+  // string type
+  // Date expires
+  // characters = [] -- array of APICharacter
+  SimpleAttributeSetter_(root, this, 'accessMask', 'eveapi/result/key', 'accessMask', parseInt);
+  SimpleAttributeSetter_(root, this, 'type', 'eveapi/result/key', 'type');
+  // NOTE: expires will be empty if this key never expires.  So we extract as a string first
+  // and convert to a date if the string is non-empty. Otherwise, we set expires to null.
+  SimpleAttributeSetter_(root, this, 'expires', 'eveapi/result/key', 'expires');
+  this.expires = this.expires.length == 0 ? null : EveDateParser_(this.expires);
+  var chars = [];
+  var processor = function(el) {
+    chars.push(new APICharacter(el));
+  };
+  ProcessChildren_(root, 'eveapi/result/key/rowset', processor);
+  this.characters = chars;
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1361,12 +1629,12 @@ function Asset(root) {
   AllAttributeSetter_(root, this, 'row', parseInt);
   // Fix singleton
   this.singleton = this.singleton === 1;
-  var assets = [];
+  var ats = [];
   var processor = function(el) {
-    assets.push(new Asset(el));
+    ats.push(new Asset(el));
   };
   ProcessChildren_(root, 'row/rowset', processor);
-  this.assets = assets;
+  this.assets = ats;
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1658,30 +1926,30 @@ function ContractItem(root) {
 // FacWarStats
 // ------------------------------------------------------------------------------------------
 function FacWarStats(root) {
-	// int factionID
-	// String factionName
-	// Date enlisted
-	// int currentRank
-	// int highestRank
-	// int killsYesterday
-	// int killsLastWeek
-	// int killsTotal
-	// int victoryPointsYesterday
-	// int victoryPointsLastWeek
-	// int victoryPointsTotal
-	// int pilots
-	SimplePropertySetter_(root, this, 'factionID', 'eveapi/result/factionID', parseInt);
-	SimplePropertySetter_(root, this, 'factionName', 'eveapi/result/factionName');
-	SimplePropertySetter_(root, this, 'enlisted', 'eveapi/result/enlisted', EveDateParser_);
-	SimplePropertySetter_(root, this, 'currentRank', 'eveapi/result/currentRank', parseInt);
-	SimplePropertySetter_(root, this, 'highestRank', 'eveapi/result/highestRank', parseInt);
-	SimplePropertySetter_(root, this, 'killsYesterday', 'eveapi/result/killsYesterday', parseInt);
-	SimplePropertySetter_(root, this, 'killsLastWeek', 'eveapi/result/killsLastWeek', parseInt);
-	SimplePropertySetter_(root, this, 'killsTotal', 'eveapi/result/killsTotal', parseInt);
-	SimplePropertySetter_(root, this, 'victoryPointsYesterday', 'eveapi/result/victoryPointsYesterday', parseInt);
-	SimplePropertySetter_(root, this, 'victoryPointsLastWeek', 'eveapi/result/victoryPointsLastWeek', parseInt);
-	SimplePropertySetter_(root, this, 'victoryPointsTotal', 'eveapi/result/victoryPointsTotal', parseInt);
-	SimplePropertySetter_(root, this, 'pilots', 'eveapi/result/pilots', parseInt);
+  // int factionID
+  // String factionName
+  // Date enlisted
+  // int currentRank
+  // int highestRank
+  // int killsYesterday
+  // int killsLastWeek
+  // int killsTotal
+  // int victoryPointsYesterday
+  // int victoryPointsLastWeek
+  // int victoryPointsTotal
+  // int pilots
+  SimplePropertySetter_(root, this, 'factionID', 'eveapi/result/factionID', parseInt);
+  SimplePropertySetter_(root, this, 'factionName', 'eveapi/result/factionName');
+  SimplePropertySetter_(root, this, 'enlisted', 'eveapi/result/enlisted', EveDateParser_);
+  SimplePropertySetter_(root, this, 'currentRank', 'eveapi/result/currentRank', parseInt);
+  SimplePropertySetter_(root, this, 'highestRank', 'eveapi/result/highestRank', parseInt);
+  SimplePropertySetter_(root, this, 'killsYesterday', 'eveapi/result/killsYesterday', parseInt);
+  SimplePropertySetter_(root, this, 'killsLastWeek', 'eveapi/result/killsLastWeek', parseInt);
+  SimplePropertySetter_(root, this, 'killsTotal', 'eveapi/result/killsTotal', parseInt);
+  SimplePropertySetter_(root, this, 'victoryPointsYesterday', 'eveapi/result/victoryPointsYesterday', parseInt);
+  SimplePropertySetter_(root, this, 'victoryPointsLastWeek', 'eveapi/result/victoryPointsLastWeek', parseInt);
+  SimplePropertySetter_(root, this, 'victoryPointsTotal', 'eveapi/result/victoryPointsTotal', parseInt);
+  SimplePropertySetter_(root, this, 'pilots', 'eveapi/result/pilots', parseInt);
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1785,12 +2053,12 @@ function KillItem(root) {
   AllAttributeSetter_(root, this, 'row', parseInt);
   // Fix singleton
   if (this.singleton !== undefined) this.singleton = this.singleton === 1;
-  var items = [];
+  var its = [];
   var processor = function(el) {
-    assets.push(new KillItem(el));
+    its.push(new KillItem(el));
   };
   ProcessChildren_(root, 'row/rowset', processor);
-  this.items = items;
+  this.items = its;
 }
 
 function KillMail(root) {
@@ -2658,4 +2926,437 @@ function Title(root) {
               { name: 'grantableRolesAtOther', ctor: Role, tgt: this.grantableRolesAtOther }
               ];
   GenericListBuilder_(root, cols, 'row/rowset');
+}
+
+// ------------------------------------------------------------------------------------------
+// Alliance
+// ------------------------------------------------------------------------------------------
+function MemberCorporation(root) {
+  // long corporationID
+  // Date startDate
+  SimpleAttributeSetter_(root, this, 'corporationID', 'row', 'corporationID', parseInt);
+  SimpleAttributeSetter_(root, this, 'startDate', 'row', 'startDate', EveDateParser_);
+}
+
+function Alliance(root) {
+  // string name
+  // string shortName
+  // long allianceID
+  // long executorCorpID
+  // int memberCount
+  // Date startDate
+  // memberCorporations = [] <- MemberCorporation
+  AllAttributeSetter_(root, this, 'row', parseInt);
+  SimpleAttributeSetter_(root, this, 'name', 'row', 'name');
+  SimpleAttributeSetter_(root, this, 'shortName', 'row', 'shortName');
+  SimpleAttributeSetter_(root, this, 'startDate', 'row', 'startDate', EveDateParser_);
+  var mc = [];
+  var processor = function(el) {
+    mc.push(new MemberCorporation(el));
+  };
+  ProcessChildren_(root, 'row/rowset', processor);
+  this.memberCorporations = mc;
+}
+
+// ------------------------------------------------------------------------------------------
+// CharacterInfo
+// ------------------------------------------------------------------------------------------
+function EmploymentHistory(root) {
+  // long recordID
+  // long corporationID
+  // string corporationName
+  // Date startDate
+  AllAttributeSetter_(root, this, 'row', parseInt);
+  SimpleAttributeSetter_(root, this, 'corporationName', 'row', 'corporationName');
+  SimpleAttributeSetter_(root, this, 'startDate', 'row', 'startDate', EveDateParser_);
+}
+
+function CharacterInfo(root) {
+  // long characterID
+  // string characterName
+  // string race
+  // string bloodline
+  // double accountBalance
+  // int skillPoints
+  // string shipName
+  // int shipTypeID
+  // string shipTypeName
+  // long corporationID
+  // string corporation
+  // Date corporationDate
+  // string lastKnownLocation
+  // double securityStatus
+  // employmentHistory = [] <- EmploymentHistory
+  SimplePropertySetter_(root, this, 'characterID', 'eveapi/result/characterID', parseInt);
+  SimplePropertySetter_(root, this, 'characterName', 'eveapi/result/characterName');
+  SimplePropertySetter_(root, this, 'race', 'eveapi/result/race');
+  SimplePropertySetter_(root, this, 'bloodline', 'eveapi/result/bloodline');
+  SimplePropertySetter_(root, this, 'accountBalance', 'eveapi/result/accountBalance', parseFloat);
+  SimplePropertySetter_(root, this, 'skillPoints', 'eveapi/result/skillPoints', parseInt);
+  SimplePropertySetter_(root, this, 'shipName', 'eveapi/result/shipName');
+  SimplePropertySetter_(root, this, 'shipTypeID', 'eveapi/result/shipTypeID', parseInt);
+  SimplePropertySetter_(root, this, 'shipTypeName', 'eveapi/result/shipTypeName');
+  SimplePropertySetter_(root, this, 'corporationID', 'eveapi/result/corporationID', parseInt);
+  SimplePropertySetter_(root, this, 'corporation', 'eveapi/result/corporation');
+  SimplePropertySetter_(root, this, 'corporationDate', 'eveapi/result/corporationDate', EveDateParser_);
+  SimplePropertySetter_(root, this, 'lastKnownLocation', 'eveapi/result/lastKnownLocation');
+  SimplePropertySetter_(root, this, 'securityStatus', 'eveapi/result/securityStatus', parseFloat);
+  var eh = [];
+  var processor = function(el) {
+    eh.push(new MemberCorporation(el));
+  };
+  ProcessChildren_(root, 'eveapi/result/rowset', processor);
+  this.employmentHistory = eh;
+}
+
+// ------------------------------------------------------------------------------------------
+// ConquerableStation
+// ------------------------------------------------------------------------------------------
+function ConquerableStation(root) {
+  // int stationID
+  // string stationName
+  // int stationTypeID
+  // int solarSystemID
+  // int corporationID
+  // string corporationName
+  AllAttributeSetter_(root, this, 'row', parseInt);
+  SimpleAttributeSetter_(root, this, 'stationName', 'row', 'stationName');
+  SimpleAttributeSetter_(root, this, 'corporationName', 'row', 'corporationName');
+}
+
+// ------------------------------------------------------------------------------------------
+// ErrorCode
+// ------------------------------------------------------------------------------------------
+function ErrorCode(root) {
+  // int errorCode
+  // string errorText
+  AllAttributeSetter_(root, this, 'row');
+  if (this.errorCode !== undefined) this.errorCode = parseInt(this.errorCode);
+}
+
+// ------------------------------------------------------------------------------------------
+// FacWarGlobalStats
+// ------------------------------------------------------------------------------------------
+function FactionStat(root) {
+  // int factionID
+  // string factionName
+  // int pilots
+  // int systemsControlled
+  // int killsYesterday
+  // int killsLastWeek
+  // int killsTotal
+  // int victoryPointsYesterday
+  // int victoryPointsLastWeek
+  // int victoryPointsTotal
+  AllAttributeSetter_(root, this, 'row', parseInt);
+  SimpleAttributeSetter_(root, this, 'factionName', 'row', 'factionName');
+}
+
+function FactionWar(root) {
+  // int factionID
+  // string factionName
+  // int againstID
+  // string againstName
+  AllAttributeSetter_(root, this, 'row');
+  if (this.factionID !== undefined) this.factionID = parseInt(this.factionID);
+  if (this.againstID !== undefined) this.againstID = parseInt(this.againstID);
+}
+
+function FacWarGlobalStats(root) {
+  // int killsYesterday
+  // int killsLastWeek
+  // int killsTotal
+  // int victoryPointsYesterday
+  // int victoryPointsLastWeek
+  // int victoryPointsTotal
+  // factions = [] <- FactionStat
+  // factionWars = [] <- FactionWar
+  SimplePropertySetter_(root, this, 'killsYesterday', 'eveapi/result/totals/killsYesterday', parseInt);
+  SimplePropertySetter_(root, this, 'killsLastWeek', 'eveapi/result/totals/killsLastWeek', parseInt);
+  SimplePropertySetter_(root, this, 'killsTotal', 'eveapi/result/totals/killsTotal', parseInt);
+  SimplePropertySetter_(root, this, 'victoryPointsYesterday', 'eveapi/result/totals/victoryPointsYesterday', parseInt);
+  SimplePropertySetter_(root, this, 'victoryPointsLastWeek', 'eveapi/result/totals/victoryPointsLastWeek', parseInt);
+  SimplePropertySetter_(root, this, 'victoryPointsTotal', 'eveapi/result/totals/victoryPointsTotal', parseInt);
+  this.factions = [];
+  this.factionWars = [];
+  var cols = [
+              { name: 'factions', ctor: FactionStat, tgt: this.factions },
+              { name: 'factionWars', ctor: FactionWar, tgt: this.factionWars }
+              ];
+  GenericListBuilder_(root, cols, 'eveapi/result/rowset');
+}
+
+// ------------------------------------------------------------------------------------------
+// FacWarTopStats
+// ------------------------------------------------------------------------------------------
+function FacWarKillRecord(root) {
+  // long characterID
+  // string characterName
+  // long corporationID
+  // string corporationName
+  // long factionID
+  // string factionName
+  // int kills
+  AllAttributeSetter_(root, this, 'row');
+  if (this.characterID !== undefined) this.characterID = parseInt(this.characterID);
+  if (this.corporationID !== undefined) this.corporationID = parseInt(this.corporationID);
+  if (this.factionID !== undefined) this.factionID = parseInt(this.factionID);
+  if (this.kills !== undefined) this.kills = parseInt(this.kills);
+}
+
+function FacWarVictoryPointRecord(root) {
+  // long characterID
+  // string characterName
+  // long corporationID
+  // string corporationName
+  // long factionID
+  // string factionName
+  // int victoryPoints
+  AllAttributeSetter_(root, this, 'row');
+  if (this.characterID !== undefined) this.characterID = parseInt(this.characterID);
+  if (this.corporationID !== undefined) this.corporationID = parseInt(this.corporationID);
+  if (this.factionID !== undefined) this.factionID = parseInt(this.factionID);
+  if (this.victoryPoints !== undefined) this.victoryPoints = parseInt(this.victoryPoints);
+}
+
+function FacWarTopStats(root) {
+  // characterKillsYesterday = [] <- FacWarKillRecord
+  // characterKillsLastWeek = [] <- FacWarKillRecord
+  // characterKillsTotal = [] <- FacWarKillRecord
+  // characterVictoryPointsYesterday = [] <- FacWarVictoryPointRecord
+  // characterVictoryPointsLastWeek = [] <- FacWarVictoryPointRecord
+  // characterVictoryPointsTotal = [] <- FacWarVictoryPointRecord
+  // corporationKillsYesterday = [] <- FacWarKillRecord
+  // corporationKillsLastWeek = [] <- FacWarKillRecord
+  // corporationKillsTotal = [] <- FacWarKillRecord
+  // corporationVictoryPointsYesterday = [] <- FacWarVictoryPointRecord
+  // corporationVictoryPointsLastWeek = [] <- FacWarVictoryPointRecord
+  // corporationVictoryPointsTotal = [] <- FacWarVictoryPointRecord
+  // factionKillsYesterday = [] <- FacWarKillRecord
+  // factionKillsLastWeek = [] <- FacWarKillRecord
+  // factionKillsTotal = [] <- FacWarKillRecord
+  // factionVictoryPointsYesterday = [] <- FacWarVictoryPointRecord
+  // factionVictoryPointsLastWeek = [] <- FacWarVictoryPointRecord
+  // factionVictoryPointsTotal = [] <- FacWarVictoryPointRecord
+  this.characterKillsYesterday = [];
+  this.characterKillsLastWeek = [];
+  this.characterKillsTotal = [];
+  this.characterVictoryPointsYesterday = [];
+  this.characterVictoryPointsLastWeek = [];
+  this.characterVictoryPointsTotal = [];
+  this.corporationKillsYesterday = [];
+  this.corporationKillsLastWeek = [];
+  this.corporationKillsTotal = [];
+  this.corporationVictoryPointsYesterday = [];
+  this.corporationVictoryPointsLastWeek = [];
+  this.corporationVictoryPointsTotal = [];
+  this.factionKillsYesterday = [];
+  this.factionKillsLastWeek = [];
+  this.factionKillsTotal = [];
+  this.factionVictoryPointsYesterday = [];
+  this.factionVictoryPointsLastWeek = [];
+  this.factionVictoryPointsTotal = [];
+  var cols = [
+              { name: 'KillsYesterday', ctor: FacWarKillRecord, tgt: this.characterKillsYesterday },
+              { name: 'KillsLastWeek', ctor: FacWarKillRecord, tgt: this.characterKillsLastWeek },
+              { name: 'KillsTotal', ctor: FacWarKillRecord, tgt: this.characterKillsTotal },
+              { name: 'VictoryPointsYesterday', ctor: FacWarVictoryPointRecord, tgt: this.characterVictoryPointsYesterday},
+              { name: 'VictoryPointsLastWeek', ctor: FacWarVictoryPointRecord, tgt: this.characterVictoryPointsLastWeek},
+              { name: 'VictoryPointsTotal', ctor: FacWarVictoryPointRecord, tgt: this.characterVictoryPointsTotal}
+              ];
+  GenericListBuilder_(root, cols, 'eveapi/result/characters/rowset');
+  cols = [
+              { name: 'KillsYesterday', ctor: FacWarKillRecord, tgt: this.corporationKillsYesterday },
+              { name: 'KillsLastWeek', ctor: FacWarKillRecord, tgt: this.corporationKillsLastWeek },
+              { name: 'KillsTotal', ctor: FacWarKillRecord, tgt: this.corporationKillsTotal },
+              { name: 'VictoryPointsYesterday', ctor: FacWarVictoryPointRecord, tgt: this.corporationVictoryPointsYesterday},
+              { name: 'VictoryPointsLastWeek', ctor: FacWarVictoryPointRecord, tgt: this.corporationVictoryPointsLastWeek},
+              { name: 'VictoryPointsTotal', ctor: FacWarVictoryPointRecord, tgt: this.corporationVictoryPointsTotal}
+              ];
+  GenericListBuilder_(root, cols, 'eveapi/result/corporations/rowset');
+  cols = [
+              { name: 'KillsYesterday', ctor: FacWarKillRecord, tgt: this.factionKillsYesterday },
+              { name: 'KillsLastWeek', ctor: FacWarKillRecord, tgt: this.factionKillsLastWeek },
+              { name: 'KillsTotal', ctor: FacWarKillRecord, tgt: this.factionKillsTotal },
+              { name: 'VictoryPointsYesterday', ctor: FacWarVictoryPointRecord, tgt: this.factionVictoryPointsYesterday},
+              { name: 'VictoryPointsLastWeek', ctor: FacWarVictoryPointRecord, tgt: this.factionVictoryPointsLastWeek},
+              { name: 'VictoryPointsTotal', ctor: FacWarVictoryPointRecord, tgt: this.factionVictoryPointsTotal}
+              ];
+  GenericListBuilder_(root, cols, 'eveapi/result/factions/rowset');
+}
+
+// ------------------------------------------------------------------------------------------
+// RefType
+// ------------------------------------------------------------------------------------------
+function RefType(root) {
+  // int refTypeID
+  // string refTypeName
+  AllAttributeSetter_(root, this, 'row');
+  if (this.refTypeID !== undefined) this.refTypeID = parseInt(this.refTypeID);
+}
+
+// ------------------------------------------------------------------------------------------
+// SkillGroup
+// ------------------------------------------------------------------------------------------
+function RequiredSkill(root) {
+  // int typeID
+  // int skillLevel
+  AllAttributeSetter_(root, this, 'row', parseInt);
+}
+
+function SkillBonus(root) {
+  // string bonusType
+  // int bonusValue
+  AllAttributeSetter_(root, this, 'row');
+  if (this.bonusValue !== undefined) this.bonusValue = parseInt(this.bonusValue);
+}
+
+function SkillDef(root) {
+  // string typeName
+  // int groupID
+  // int typeID
+  // boolean published
+  // string description
+  // int rank
+  // string primaryAttribute
+  // string secondaryAttribute
+  // requiredSkills = [] <- RequiredSkill
+  // skillBonuses = [] <- SkillBonus
+  AllAttributeSetter_(root, this, 'row', parseInt);
+  SimpleAttributeSetter_(root, this, 'typeName', 'row', 'typeName');
+  this.published = this.published === 1;
+  SimplePropertySetter_(root, this, 'description', 'row/description');
+  SimplePropertySetter_(root, this, 'rank', 'row/rank', parseInt);
+  SimplePropertySetter_(root, this, 'primaryAttribute', 'row/requiredAttributes/primaryAttribute');
+  SimplePropertySetter_(root, this, 'secondaryAttribute', 'row/requiredAttributes/secondaryAttribute');
+  this.requiredSkills = [];
+  this.skillBonuses = [];
+  var cols = [
+              { name: 'requiredSkills', ctor: RequiredSkill, tgt: this.requiredSkills },
+              { name: 'skillBonusCollection', ctor: SkillBonus, tgt: this.skillBonuses}
+              ];
+  GenericListBuilder_(root, cols, 'row/rowset');
+}
+
+function SkillGroup(root) {
+  // string groupName
+  // int groupID
+  // skills = [] <- SkillDef
+  AllAttributeSetter_(root, this, 'row');
+  if (this.groupID !== undefined) this.groupID = parseInt(this.groupID);
+  var skls = [];
+  var processor = function(el) {
+    skls.push(new SkillDef(el));
+  };
+  ProcessChildren_(root, 'row/rowset', processor);
+  this.skills = skls;
+}
+
+// ------------------------------------------------------------------------------------------
+// TypeName
+// ------------------------------------------------------------------------------------------
+function TypeName(root) {
+  // int typeID
+  // string typeName
+  AllAttributeSetter_(root, this, 'row');
+  if (this.typeID !== undefined) this.typeID = parseInt(this.typeID);
+}
+
+// ------------------------------------------------------------------------------------------
+// FactionWarSystem
+// ------------------------------------------------------------------------------------------
+function FactionWarSystem(root) {
+  // long solarSystemID
+  // string solarSystemName
+  // long occupyingFactionID
+  // long owningFactionID
+  // string occupyingFactionName
+  // string owningFactionName
+  // boolean contested
+  // int victoryPoints
+  // int victoryPointThreshold
+  AllAttributeSetter_(root, this, 'row', parseInt);
+  SimpleAttributeSetter_(root, this, 'solarSystemName', 'row', 'solarSystemName');
+  SimpleAttributeSetter_(root, this, 'occupyingFactionName', 'row', 'occupyingFactionName');
+  SimpleAttributeSetter_(root, this, 'owningFactionName', 'row', 'owningFactionName');
+  SimpleAttributeSetter_(root, this, 'contested', 'row', 'contested');
+  this.contested = this.contested == 'True';
+}
+
+// ------------------------------------------------------------------------------------------
+// ShipJump
+// ------------------------------------------------------------------------------------------
+function ShipJump(root) {
+  // long solarSystemID
+  // int shipJumps
+  AllAttributeSetter_(root, this, 'row', parseInt);
+}
+
+// ------------------------------------------------------------------------------------------
+// KillStat
+// ------------------------------------------------------------------------------------------
+function KillStat(root) {
+  // long solarSystemID
+  // int shipKills
+  // int factionKills
+  // int podKills
+  AllAttributeSetter_(root, this, 'row', parseInt);
+}
+
+// ------------------------------------------------------------------------------------------
+// SystemSovereignty
+// ------------------------------------------------------------------------------------------
+function SystemSovereignty(root) {
+  // long solarSystemID
+  // int allianceID
+  // long factionID
+  // string solarSystemName
+  // long corporationID
+  AllAttributeSetter_(root, this, 'row', parseInt);
+  SimpleAttributeSetter_(root, this, 'solarSystemName', 'row', 'solarSystemName');
+}
+
+// ------------------------------------------------------------------------------------------
+// ServerStatus
+// ------------------------------------------------------------------------------------------
+function ServerStatus(root) {
+  // boolean serverOpen
+  // int onlinePlayers
+  SimplePropertySetter_(root, this, 'serverOpen', 'eveapi/result/serverOpen');
+  SimplePropertySetter_(root, this, 'onlinePlayers', 'eveapi/result/onlinePlayers', parseInt);
+  this.serverOpen = this.serverOpen == 'True';
+}
+
+// ------------------------------------------------------------------------------------------
+// APICallList
+// ------------------------------------------------------------------------------------------
+function APICallGroup(root) {
+  // int groupID
+  // string name
+  // string description
+  AllAttributeSetter_(root, this, 'row');
+  if (this.groupID !== undefined) this.groupID = parseInt(this.groupID);
+}
+
+function APICall(root) {
+  // long accessMask
+  // string type
+  // string name
+  // int groupID
+  // string description
+  AllAttributeSetter_(root, this, 'row');
+  if (this.accessMask !== undefined) this.accessMask = parseInt(this.accessMask);
+  if (this.groupID !== undefined) this.groupID = parseInt(this.groupID);
+}
+
+function APICallList(root) {
+  // callGroups = [] <- APICallGroup
+  // calls = [] <- APICall
+  this.callGroups = [];
+  this.calls = [];
+  var cols = [
+              { name: 'callGroups', ctor: APICallGroup, tgt: this.callGroups },
+              { name: 'calls', ctor: APICall, tgt: this.calls}
+              ];
+  GenericListBuilder_(root, cols, 'eveapi/result/rowset');
 }
